@@ -32,7 +32,7 @@ VM_DB_PRIVATE_IP="10.0.0.6"
 ## Az Login check
 if az account list 2>&1 | grep -q 'az login'
 then
-    echo -e "\n--> Warning: You have to login first with the 'az login' command before you can run this lab tool"
+    printf >&2 "\n--> Warning: You have to login first with the 'az login' command before you can run this lab tool\n"
     az login -o table
 fi
 
