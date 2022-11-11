@@ -21,12 +21,15 @@ VM_IMAGE="UbuntuLTS"
 VM_FE="${PREFIX}-vm-fe"
 VM_FE_PUBLIC_IP_NAME="${VM_FE}-public-ip"
 VM_FE_PRIVATE_IP="10.0.0.4"
+VM_FE_INIT_CMD_PATH="./fe_init.sh"
 
 VM_BE="${PREFIX}-vm-be"
 VM_BE_PRIVATE_IP="10.0.0.5"
+VM_BE_INIT_CMD_PATH="./be_init.sh"
 
 VM_DB="${PREFIX}-vm-db"
 VM_DB_PRIVATE_IP="10.0.0.6"
+VM_DB_INIT_CMD_PATH="./db_init.sh"
 
 
 ## Az Login check
@@ -106,7 +109,6 @@ az vm create \
 az vm wait --created --ids $(az vm list -g "$RESOURCE_GROUP" --query "[].id" -o tsv)
 
 ## Open ports for VMs
-
 az vm open-port \
 --resource-group "$RESOURCE_GROUP" \
 --name "$VM_FE" \
@@ -115,15 +117,43 @@ az vm open-port \
 az vm open-port \
 --resource-group "$RESOURCE_GROUP" \
 --name "$VM_BE" \
---port 22 \
+--port 22,9966 \
 
 az vm open-port \
 --resource-group "$RESOURCE_GROUP" \
 --name "$VM_DB" \
 --port 22,3306  \
 
-## Get FE public ip address
+## Invoke initialization commands
+az vm run-command invoke \
+--command-id "RunShellScript" \
+--resource-group "$RESOURCE_GROUP" \
+--name "$VM_FE" \
+--scripts @"$VM_FE_INIT_CMD_PATH" \
+--no-wait \
 
+az vm run-command invoke \
+--command-id "RunShellScript" \
+--resource-group "$RESOURCE_GROUP" \
+--name "$VM_BE" \
+--parameters "$VM_DB_PRIVATE_IP" \
+--scripts @"$VM_BE_INIT_CMD_PATH" \
+--no-wait \
+
+az vm run-command invoke \
+--command-id "RunShellScript" \
+--resource-group "$RESOURCE_GROUP" \
+--name "$VM_DB" \
+--scripts @"$VM_DB_INIT_CMD_PATH" \
+--no-wait \
+
+# Wait for all init commands to complete
+
+# word-splittig wanted here
+# shellcheck disable=SC2046
+az vm run-command wait --created --ids $(az vm run-command list -g "$RESOURCE_GROUP" --query "[].id" -o tsv)
+
+## Get FE public ip address
 VM_FE_PUBLIC_IP=$(
 	az network public-ip show \
 	--resource-group "$RESOURCE_GROUP" \
@@ -136,6 +166,7 @@ VM_FE_PUBLIC_IP=$(
 echo >&2 "========== SETUP INFO =========="
 cat <<EOF
 {
+	"id": "$PREFIX",
 	"resource_group": "$RESOURCE_GROUP",
 	"fe_public_ip": "$VM_FE_PUBLIC_IP",
 	"fe_private_ip": "$VM_FE_PRIVATE_IP",

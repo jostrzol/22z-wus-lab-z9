@@ -6,10 +6,11 @@ if [ "$#" -ne 1 ] || ! [ -d "$1" ]; then
 fi
 
 # Get Packages
-apt update -y
-apt install -y git openjdk-11-jdk
+sudo apt update -y
+sudo apt install -y git openjdk-11-jdk
 
 # Get petclinic rest api
+cd || exit
 git clone https://github.com/spring-petclinic/spring-petclinic-rest.git
 cd spring-petclinic-rest || exit
 
