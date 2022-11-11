@@ -10,10 +10,6 @@ mkdir -p "./rgnames"
 RESOURCE_GROUP_FILENAME="./rgnames/${PREFIX}.rgname"
 echo "$RESOURCE_GROUP" >"$RESOURCE_GROUP_FILENAME"
 
-# NSG="${PREFIX}-nsg"
-# NSG_SSH="${NSG}-ssh"
-# NSG_HTTP="${NSG}-http"
-
 VNET_NAME="${PREFIX}-vnet"
 VNET_SUBNET_NAME="${PREFIX}-subnet"
 VM_SIZE="Standard_B1ms"
@@ -44,38 +40,6 @@ fi
 az group create \
 --location "$LOCATION" \
 --resource-group "$RESOURCE_GROUP"
-
-# ## Create network security group
-# az network nsg create \
-# --resource-group "$RESOURCE_GROUP" \
-# --name "$NSG"
-
-# az network nsg rule create \
-# --resource-group "$RESOURCE_GROUP" \
-# --name "$NSG_HTTP" \
-# --nsg-name "$NSG" \
-# --protocol tcp \
-# --direction inbound \
-# --source-address-prefix '*' \
-# --source-port-range '*' \
-# --destination-address-prefix '*' \
-# --destination-port-range 80 \
-# --access allow \
-# --priority 200
-
-# az network nsg rule create \
-# --resource-group "$RESOURCE_GROUP" \
-# --name "$NSG_SSH" \
-# --nsg-name "$NSG" \
-# --protocol tcp \
-# --direction inbound \
-# --source-address-prefix '*' \
-# --source-port-range '*' \
-# --destination-address-prefix '*' \
-# --destination-port-range 22 \
-# --access allow \
-# --priority 300
-
 
 ## Create Vnet
 az network vnet create \
