@@ -1,6 +1,6 @@
 #!/usr/bin/sh
 
-if [ "$#" -ne 1 ] || ! [ -d "$1" ]; then
+if [ "$#" -ne 1 ]; then
     echo 'Removing all resource groups from rgnames directory.'
     echo 'Enter y to confirm.'
     read -r accept
@@ -14,7 +14,8 @@ if [ "$#" -ne 1 ] || ! [ -d "$1" ]; then
         echo 'ABORT'
     fi
 else
-    RGNAME=$(cat "$1")
+    filename="$1"
+    RGNAME=$(cat "$filename")
     az group delete -y --no-wait --name "$RGNAME" && \
     rm "$filename"
 fi
