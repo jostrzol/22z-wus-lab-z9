@@ -24,6 +24,7 @@ VM_FE_PRIVATE_IP="10.0.0.4"
 VM_FE_INIT_CMD_PATH="./fe_init.sh"
 
 VM_BE="${PREFIX}-vm-be"
+VM_BE_PUBLIC_IP_NAME="${VM_BE}-public-ip"
 VM_BE_PRIVATE_IP="10.0.0.5"
 VM_BE_INIT_CMD_PATH="./be_init.sh"
 
@@ -54,7 +55,7 @@ az network vnet subnet create \
 --resource-group "$RESOURCE_GROUP" \
 --vnet-name "$VNET_NAME" \
 --name "$VNET_SUBNET_NAME" \
---address-prefixes 10.0.0.0/24 
+--address-prefixes 10.0.0.0/24
 
 ## Create frontend VM
 az vm create \
@@ -82,7 +83,7 @@ az vm create \
 --subnet "$VNET_SUBNET_NAME" \
 --private-ip-address "$VM_BE_PRIVATE_IP" \
 --public-ip-sku Standard \
---public-ip-address "" `# disable public address` \
+--public-ip-address "$VM_BE_PUBLIC_IP_NAME" \
 --vnet-name "$VNET_NAME" \
 --no-wait \
 
@@ -112,7 +113,7 @@ az vm wait --created --ids $(az vm list -g "$RESOURCE_GROUP" --query "[].id" -o 
 az vm open-port \
 --resource-group "$RESOURCE_GROUP" \
 --name "$VM_FE" \
---port 22,80 \
+--port 22,80,4200 \
 
 az vm open-port \
 --resource-group "$RESOURCE_GROUP" \
@@ -125,39 +126,48 @@ az vm open-port \
 --port 22,3306  \
 
 ## Invoke initialization commands
-az vm run-command invoke \
---command-id "RunShellScript" \
---resource-group "$RESOURCE_GROUP" \
---name "$VM_FE" \
---scripts @"$VM_FE_INIT_CMD_PATH" \
---no-wait \
-
-az vm run-command invoke \
---command-id "RunShellScript" \
---resource-group "$RESOURCE_GROUP" \
---name "$VM_BE" \
---parameters "$VM_DB_PRIVATE_IP" \
---scripts @"$VM_BE_INIT_CMD_PATH" \
---no-wait \
-
-az vm run-command invoke \
---command-id "RunShellScript" \
---resource-group "$RESOURCE_GROUP" \
---name "$VM_DB" \
---scripts @"$VM_DB_INIT_CMD_PATH" \
---no-wait \
-
-# Wait for all init commands to complete
-
-# word-splittig wanted here
-# shellcheck disable=SC2046
-az vm run-command wait --created --ids $(az vm run-command list -g "$RESOURCE_GROUP" --query "[].id" -o tsv)
+# az vm run-command invoke \
+# --command-id "RunShellScript" \
+# --resource-group "$RESOURCE_GROUP" \
+# --name "$VM_FE" \
+# --scripts @"$VM_FE_INIT_CMD_PATH" \
+# --no-wait \
+#
+# az vm run-command invoke \
+# --command-id "RunShellScript" \
+# --resource-group "$RESOURCE_GROUP" \
+# --name "$VM_BE" \
+# --parameters "$VM_DB_PRIVATE_IP" \
+# --scripts @"$VM_BE_INIT_CMD_PATH" \
+# --no-wait \
+#
+# az vm run-command invoke \
+# --command-id "RunShellScript" \
+# --resource-group "$RESOURCE_GROUP" \
+# --name "$VM_DB" \
+# --scripts @"$VM_DB_INIT_CMD_PATH" \
+# --no-wait \
+#
+# # Wait for all init commands to complete
+#
+# # word-splittig wanted here
+# # shellcheck disable=SC2046
+# az vm run-command wait --created --ids $(az vm run-command list -g "$RESOURCE_GROUP" --query "[].id" -o tsv)
 
 ## Get FE public ip address
 VM_FE_PUBLIC_IP=$(
 	az network public-ip show \
 	--resource-group "$RESOURCE_GROUP" \
 	--name "$VM_FE_PUBLIC_IP_NAME" \
+	--query "ipAddress" \
+	--output tsv \
+)
+
+## Get FE public ip address
+VM_BE_PUBLIC_IP=$(
+	az network public-ip show \
+	--resource-group "$RESOURCE_GROUP" \
+	--name "$VM_BE_PUBLIC_IP_NAME" \
 	--query "ipAddress" \
 	--output tsv \
 )
@@ -170,6 +180,7 @@ cat <<EOF
 	"resource_group": "$RESOURCE_GROUP",
 	"fe_public_ip": "$VM_FE_PUBLIC_IP",
 	"fe_private_ip": "$VM_FE_PRIVATE_IP",
+	"be_public_ip": "$VM_BE_PUBLIC_IP",
 	"be_private_ip": "$VM_BE_PRIVATE_IP",
 	"db_private_ip": "$VM_DB_PRIVATE_IP",
 	"vm_user": "$VM_USER",

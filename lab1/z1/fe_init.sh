@@ -1,20 +1,21 @@
-#!/usr/bin/sh
+#!/usr/bin/bash
 
-if [ "$#" -ne 1 ] || ! [ -d "$1" ]; then
+if [ "$#" -ne 1 ]; then
   echo "Usage: $0 BE URL" >&2
   exit 1
 fi
 
-BE_URL="$!"
+BE_URL="$1"
 
-apt update -y
-apt install -y git curl
+sudo apt update -y
+sudo apt install -y git curl
 
-# Install n node manager
-curl -L https://raw.githubusercontent.com/tj/n/master/bin/n -o n
-bash n lts
-npm install -g n
-n 12.11.1
+# Install nvm node manager
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.2/install.sh | bash
+# shellcheck source=/dev/null
+source "$HOME/.bashrc"
+
+nvm install 12.11.1
 
 npm uninstall -g angular-cli @angular/cli
 npm cache clean --force
