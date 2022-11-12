@@ -1,9 +1,11 @@
-#!/usr/bin/sh
+#!/bin/sh
 
 if [ "$#" -ne 1 ]; then
   echo "Usage: $0 DB server ip address" >&2
   exit 1
 fi
+
+DB_URL="$1"
 
 # Get Packages
 sudo apt update -y
@@ -15,7 +17,7 @@ git clone https://github.com/spring-petclinic/spring-petclinic-rest.git
 cd spring-petclinic-rest || exit
 
 # Set spring DB properties
-export SPRING_DATASOURCE_URL="jdbc:mysql://$1:3306/petclinic?useUnicode=true"
+export SPRING_DATASOURCE_URL="jdbc:mysql://$DB_URL:3306/petclinic?useUnicode=true"
 export SPRING_PROFILES_ACTIVE=mysql,spring-data-jpa
 
 # Start petclinic rest api
