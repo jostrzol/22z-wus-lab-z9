@@ -157,7 +157,7 @@ print_stage "OPENING PORTS FOR VMS"
 az vm open-port \
 --resource-group "$RESOURCE_GROUP" \
 --name "$VM_FE" \
---port 22,80 \
+--port 22,4200 \
 
 az vm open-port \
 --resource-group "$RESOURCE_GROUP" \
