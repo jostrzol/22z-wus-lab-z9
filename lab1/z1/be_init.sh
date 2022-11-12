@@ -20,5 +20,5 @@ cd spring-petclinic-rest || exit
 export SPRING_DATASOURCE_URL="jdbc:mysql://$DB_URL:3306/petclinic?useUnicode=true"
 export SPRING_PROFILES_ACTIVE=mysql,spring-data-jpa
 
-# Start petclinic rest api
-./mvnw spring-boot:run
+# Start petclinic rest api in background
+./mvnw spring-boot:run &

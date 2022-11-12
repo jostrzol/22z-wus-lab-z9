@@ -34,7 +34,7 @@ echo N | ng analytics off
 sed -i "s/localhost/${BE_URL}/g" src/environments/environment.ts
 sed -i "s/localhost/${BE_URL}/g" src/environments/environment.prod.ts
 
-ng serve --host 0.0.0.0
+ng serve --host 0.0.0.0 &
 
 # apt install nginx
 # ng build --prod --base-href=/petclinic/ --deploy-url=/petclinic/

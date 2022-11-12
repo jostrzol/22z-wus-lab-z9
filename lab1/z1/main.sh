@@ -1,7 +1,8 @@
 #!/usr/bin/sh
 
 ## Global Variables for defaults
-PREFIX="wus-lab1-zad1-zesp9-$(openssl rand -hex 4)"
+RAND="$(openssl rand -hex 4)"
+PREFIX="wus-lab1-zad1-zesp9-${RAND}"
 
 RESOURCE_GROUP="${PREFIX}-rg"
 LOCATION="westeurope"
@@ -21,17 +22,24 @@ VM_IMAGE="UbuntuLTS"
 VM_FE="${PREFIX}-vm-fe"
 VM_FE_PUBLIC_IP_NAME="${VM_FE}-public-ip"
 VM_FE_PRIVATE_IP="10.0.0.4"
-VM_FE_INIT_CMD_PATH="./fe_init.sh"
 
 VM_BE="${PREFIX}-vm-be"
 VM_BE_PUBLIC_IP_NAME="${VM_BE}-public-ip"
 VM_BE_PRIVATE_IP="10.0.0.5"
-VM_BE_INIT_CMD_PATH="./be_init.sh"
 
 VM_DB="${PREFIX}-vm-db"
 VM_DB_PRIVATE_IP="10.0.0.6"
-VM_DB_INIT_CMD_PATH="./db_init.sh"
 
+STORAGE_ACCOUNT="wuslab1zad1$RAND"
+CONTAINER_NAME="$PREFIX-container"
+CONTAINER_URI="https://$STORAGE_ACCOUNT.blob.core.windows.net/$CONTAINER_NAME"
+
+FE_INIT_SCRIPT_NAME="fe_init.sh"
+BE_INIT_SCRIPT_NAME="be_init.sh"
+DB_INIT_SCRIPT_NAME="db_init.sh"
+FE_INIT_SCRIPT_URL="$CONTAINER_URI/$FE_INIT_SCRIPT_NAME"
+BE_INIT_SCRIPT_URL="$CONTAINER_URI/$BE_INIT_SCRIPT_NAME"
+DB_INIT_SCRIPT_URL="$CONTAINER_URI/$DB_INIT_SCRIPT_NAME"
 
 ## Az Login check
 if az account list 2>&1 | grep -q 'az login'
@@ -40,12 +48,20 @@ then
     az login -o table
 fi
 
+print_stage() {
+	echo >&2 "========== $1 =========="
+}
+
 ## Create Resource Group
+print_stage "CREATING RESOURCE GROUP"
+
 az group create \
 --location "$LOCATION" \
 --resource-group "$RESOURCE_GROUP"
 
 ## Create Vnet
+print_stage "CREATING VNET"
+
 az network vnet create \
 --resource-group "$RESOURCE_GROUP" \
 --name "$VNET_NAME" \
@@ -58,6 +74,8 @@ az network vnet subnet create \
 --address-prefixes 10.0.0.0/24
 
 ## Create frontend VM
+print_stage "[ASYNC] CREATING FRONTEND VM"
+
 az vm create \
 --resource-group "$RESOURCE_GROUP" \
 --name "$VM_FE" \
@@ -73,6 +91,8 @@ az vm create \
 --no-wait \
 
 ## Create backend VM
+print_stage "[ASYNC] CREATING BACKEND VM"
+
 az vm create \
 --resource-group "$RESOURCE_GROUP" \
 --name "$VM_BE" \
@@ -88,6 +108,8 @@ az vm create \
 --no-wait \
 
 ## Create database VM
+print_stage "[ASYNC] CREATING DATABASE VM"
+
 az vm create \
 --resource-group "$RESOURCE_GROUP" \
 --name "$VM_DB" \
@@ -102,18 +124,40 @@ az vm create \
 --vnet-name "$VNET_NAME" \
 --no-wait \
 
+VM_IDS="$(az vm list -g "$RESOURCE_GROUP" --query "[].id" -o tsv)"
 
 ## Wait for all VMs to be ready
+print_stage "WAITING FOR VM CREATION"
 
-# word-splittig wanted here
-# shellcheck disable=SC2046
-az vm wait --created --ids $(az vm list -g "$RESOURCE_GROUP" --query "[].id" -o tsv)
+# shellcheck disable=SC2086 # want to split ids here
+az vm wait --created --ids $VM_IDS
+
+## Get public ip addresses
+print_stage "FETCHING PUBLIC IPS"
+
+VM_FE_PUBLIC_IP=$(
+	az network public-ip show \
+	--resource-group "$RESOURCE_GROUP" \
+	--name "$VM_FE_PUBLIC_IP_NAME" \
+	--query "ipAddress" \
+	--output tsv \
+)
+
+VM_BE_PUBLIC_IP=$(
+	az network public-ip show \
+	--resource-group "$RESOURCE_GROUP" \
+	--name "$VM_BE_PUBLIC_IP_NAME" \
+	--query "ipAddress" \
+	--output tsv \
+)
 
 ## Open ports for VMs
+print_stage "OPENING PORTS FOR VMS"
+
 az vm open-port \
 --resource-group "$RESOURCE_GROUP" \
 --name "$VM_FE" \
---port 22,80,4200 \
+--port 22,80 \
 
 az vm open-port \
 --resource-group "$RESOURCE_GROUP" \
@@ -125,65 +169,130 @@ az vm open-port \
 --name "$VM_DB" \
 --port 22,3306  \
 
-## Invoke initialization commands
-# az vm run-command invoke \
-# --command-id "RunShellScript" \
-# --resource-group "$RESOURCE_GROUP" \
-# --name "$VM_FE" \
-# --scripts @"$VM_FE_INIT_CMD_PATH" \
-# --no-wait \
-#
-# az vm run-command invoke \
-# --command-id "RunShellScript" \
-# --resource-group "$RESOURCE_GROUP" \
-# --name "$VM_BE" \
-# --parameters "$VM_DB_PRIVATE_IP" \
-# --scripts @"$VM_BE_INIT_CMD_PATH" \
-# --no-wait \
-#
-# az vm run-command invoke \
-# --command-id "RunShellScript" \
-# --resource-group "$RESOURCE_GROUP" \
-# --name "$VM_DB" \
-# --scripts @"$VM_DB_INIT_CMD_PATH" \
-# --no-wait \
-#
-# # Wait for all init commands to complete
-#
-# # word-splittig wanted here
-# # shellcheck disable=SC2046
-# az vm run-command wait --created --ids $(az vm run-command list -g "$RESOURCE_GROUP" --query "[].id" -o tsv)
+## Upload initialization files
+print_stage "UPLOADING INIT FILES"
 
-## Get FE public ip address
-VM_FE_PUBLIC_IP=$(
-	az network public-ip show \
+STORAGE_ACCOUNT_ID="$(
+	az storage account create \
+	--name "$STORAGE_ACCOUNT" \
 	--resource-group "$RESOURCE_GROUP" \
-	--name "$VM_FE_PUBLIC_IP_NAME" \
-	--query "ipAddress" \
+	--query "id" \
 	--output tsv \
-)
+)"
 
-## Get FE public ip address
-VM_BE_PUBLIC_IP=$(
-	az network public-ip show \
+STORAGE_ACCOUNT_KEY="$(
+	az storage account keys list \
 	--resource-group "$RESOURCE_GROUP" \
-	--name "$VM_BE_PUBLIC_IP_NAME" \
-	--query "ipAddress" \
+	--account-name "$STORAGE_ACCOUNT" \
+	--query "[0].value" \
 	--output tsv \
-)
+)"
+
+STORAGE_ACCOUNT_CONNECTION_STRING="$(
+	az storage account show-connection-string \
+	--ids "$STORAGE_ACCOUNT_ID" \
+	--query "connectionString" \
+	--output tsv \
+)"
+
+az storage container create \
+--name "$CONTAINER_NAME" \
+--connection-string "$STORAGE_ACCOUNT_CONNECTION_STRING" \
+
+az storage blob upload-batch \
+--source "$(pwd)" \
+--destination "$CONTAINER_NAME" \
+--connection-string "$STORAGE_ACCOUNT_CONNECTION_STRING" \
+--pattern "??_init.sh" \
 
 # Print setup info
-echo >&2 "========== SETUP INFO =========="
+print_stage "SETUP INFO"
 cat <<EOF
 {
 	"id": "$PREFIX",
 	"resource_group": "$RESOURCE_GROUP",
 	"fe_public_ip": "$VM_FE_PUBLIC_IP",
-	"fe_private_ip": "$VM_FE_PRIVATE_IP",
 	"be_public_ip": "$VM_BE_PUBLIC_IP",
+	"fe_private_ip": "$VM_FE_PRIVATE_IP",
 	"be_private_ip": "$VM_BE_PRIVATE_IP",
 	"db_private_ip": "$VM_DB_PRIVATE_IP",
 	"vm_user": "$VM_USER",
 	"vm_password": "$VM_PASSWORD"
 }
 EOF
+
+## Add initialization extensions to VMs
+print_stage "[ASYNC] CREATING EXTENSION FOR FRONTEND VM INITIALIZATION"
+
+az vm extension set \
+  --resource-group "$RESOURCE_GROUP" \
+  --vm-name "$VM_FE" \
+  --name customScript \
+  --publisher Microsoft.Azure.Extensions \
+  --protected-settings '{
+		"storageAccountName": "'"$STORAGE_ACCOUNT"'",
+		"storageAccountKey": "'"$STORAGE_ACCOUNT_KEY"'",
+		"fileUris": ["'"$FE_INIT_SCRIPT_URL"'"],
+		"commandToExecute": "'"./$FE_INIT_SCRIPT_NAME $VM_BE_PUBLIC_IP"'"
+	}' \
+  --no-wait \
+
+print_stage "[ASYNC] CREATING EXTENSION FOR BACKEND VM INITIALIZATION"
+
+az vm extension set \
+  --resource-group "$RESOURCE_GROUP" \
+  --vm-name "$VM_BE" \
+  --name customScript \
+  --publisher Microsoft.Azure.Extensions \
+  --protected-settings '{
+		"storageAccountName": "'"$STORAGE_ACCOUNT"'",
+		"storageAccountKey": "'"$STORAGE_ACCOUNT_KEY"'",
+		"fileUris": ["'"$BE_INIT_SCRIPT_URL"'"],
+		"commandToExecute": "'"./$BE_INIT_SCRIPT_NAME $VM_DB_PRIVATE_IP"'"
+	}' \
+  --no-wait \
+
+print_stage "[ASYNC] CREATING EXTENSION FOR DATABASE VM INITIALIZATION"
+
+az vm extension set \
+  --resource-group "$RESOURCE_GROUP" \
+  --vm-name "$VM_DB" \
+  --name customScript \
+  --publisher Microsoft.Azure.Extensions \
+  --protected-settings '{
+		"storageAccountName": "'"$STORAGE_ACCOUNT"'",
+		"storageAccountKey": "'"$STORAGE_ACCOUNT_KEY"'",
+		"fileUris": ["'"$DB_INIT_SCRIPT_URL"'"],
+		"commandToExecute": "'"./$DB_INIT_SCRIPT_NAME"'"
+	}' \
+  --no-wait \
+
+# shellcheck disable=SC2086 # want to split ids here
+EXTENSION_IDS=$(az vm extension list --ids $VM_IDS --query "[].id" -o tsv)
+
+# Waiting for extensions to execute
+print_stage "WAITING FOR EXTENSIONS TO EXECUTE"
+
+# shellcheck disable=SC2086 # want to split ids here
+az vm extension wait --created --ids $EXTENSION_IDS
+
+# Print setup info
+print_stage "SETUP INFO"
+cat <<EOF
+{
+	"id": "$PREFIX",
+	"resource_group": "$RESOURCE_GROUP",
+	"fe_public_ip": "$VM_FE_PUBLIC_IP",
+	"be_public_ip": "$VM_BE_PUBLIC_IP",
+	"fe_private_ip": "$VM_FE_PRIVATE_IP",
+	"be_private_ip": "$VM_BE_PRIVATE_IP",
+	"db_private_ip": "$VM_DB_PRIVATE_IP",
+	"vm_user": "$VM_USER",
+	"vm_password": "$VM_PASSWORD"
+}
+EOF
+
+## Done
+print_stage "DONE"
+echo >&2 "Petclinic accesible at http://$VM_FE_PUBLIC_IP:4200"
+echo >&2 "Run ./cleanup.sh to remove the resource group"
