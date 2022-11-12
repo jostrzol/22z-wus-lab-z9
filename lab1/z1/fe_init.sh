@@ -1,8 +1,8 @@
 #!/bin/bash
 
 if [ "$#" -ne 1 ]; then
-  echo "Usage: $0 BE URL" >&2
-  exit 1
+    echo "Usage: $0 BE URL" >&2
+    exit 1
 fi
 
 BE_URL="$1"
@@ -12,8 +12,8 @@ sudo apt install -y git curl
 
 # Install nvm node manager
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.2/install.sh | bash
-# shellcheck source=/dev/null
-source "$HOME/.bashrc"
+export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
 
 nvm install 12.11.1
 
@@ -36,8 +36,6 @@ sed -i "s/localhost/${BE_URL}/g" src/environments/environment.prod.ts
 
 ng serve --host 0.0.0.0
 
-
-
 # apt install nginx
 # ng build --prod --base-href=/petclinic/ --deploy-url=/petclinic/
 # mkdir -p /usr/share/nginx/html/petclinic
@@ -57,4 +55,3 @@ ng serve --host 0.0.0.0
 # }
 
 # END
-
