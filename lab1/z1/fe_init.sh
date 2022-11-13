@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 if [ "$#" -ne 1 ]; then
     echo "Usage: $0 BE URL" >&2
@@ -29,29 +29,7 @@ npm install
 
 echo N | ng analytics off
 
-# TODO configure deployment config (e.g. nginx)
-
 sed -i "s/localhost/${BE_URL}/g" src/environments/environment.ts
 sed -i "s/localhost/${BE_URL}/g" src/environments/environment.prod.ts
 
 ng serve --host 0.0.0.0 &
-
-# apt install nginx
-# ng build --prod --base-href=/petclinic/ --deploy-url=/petclinic/
-# mkdir -p /usr/share/nginx/html/petclinic
-# cp -r dist/ /usr/share/nginx/html/petclinic
-
-# tee -a /etc/nginx/nginx.conf << END
-
-# server {
-# 	listen       80 default_server;
-#         root         /usr/share/nginx/html;
-#         index index.html;
-
-# 	location /petclinic/ {
-#                 alias /usr/share/nginx/html/petclinic/dist/;
-#                 try_files \$uri\$args \$uri\$args/ /petclinic/index.html;
-#         }
-# }
-
-# END

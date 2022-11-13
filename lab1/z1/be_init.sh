@@ -1,8 +1,8 @@
 #!/bin/sh
 
 if [ "$#" -ne 1 ]; then
-  echo "Usage: $0 DB server ip address" >&2
-  exit 1
+    echo "Usage: $0 DB server ip address" >&2
+    exit 1
 fi
 
 DB_URL="$1"
