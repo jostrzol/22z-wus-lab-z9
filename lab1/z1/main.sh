@@ -294,5 +294,5 @@ EOF
 
 ## Done
 print_stage "DONE"
-echo >&2 "Petclinic accesible at http://$VM_FE_PUBLIC_IP:4200"
+echo >&2 "Petclinic accesible at http://$VM_FE_PUBLIC_IP:4200 (it may require a moment to initialize)"
 echo >&2 "Run ./cleanup.sh to remove the resource group"
