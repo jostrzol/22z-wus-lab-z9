@@ -24,7 +24,6 @@ VM_FE_PUBLIC_IP_NAME="${VM_FE}-public-ip"
 VM_FE_PRIVATE_IP="10.0.0.4"
 
 VM_BE="${PREFIX}-vm-be"
-VM_BE_PUBLIC_IP_NAME="${VM_BE}-public-ip"
 VM_BE_PRIVATE_IP="10.0.0.5"
 
 VM_DB="${PREFIX}-vm-db"
@@ -103,7 +102,7 @@ az vm create \
 --subnet "$VNET_SUBNET_NAME" \
 --private-ip-address "$VM_BE_PRIVATE_IP" \
 --public-ip-sku Standard \
---public-ip-address "$VM_BE_PUBLIC_IP_NAME" \
+--public-ip-address "" `# disable public address` \
 --vnet-name "$VNET_NAME" \
 --no-wait \
 
@@ -139,14 +138,6 @@ VM_FE_PUBLIC_IP=$(
 	az network public-ip show \
 	--resource-group "$RESOURCE_GROUP" \
 	--name "$VM_FE_PUBLIC_IP_NAME" \
-	--query "ipAddress" \
-	--output tsv \
-)
-
-VM_BE_PUBLIC_IP=$(
-	az network public-ip show \
-	--resource-group "$RESOURCE_GROUP" \
-	--name "$VM_BE_PUBLIC_IP_NAME" \
 	--query "ipAddress" \
 	--output tsv \
 )
@@ -212,7 +203,6 @@ cat <<EOF
 	"id": "$PREFIX",
 	"resource_group": "$RESOURCE_GROUP",
 	"fe_public_ip": "$VM_FE_PUBLIC_IP",
-	"be_public_ip": "$VM_BE_PUBLIC_IP",
 	"fe_private_ip": "$VM_FE_PRIVATE_IP",
 	"be_private_ip": "$VM_BE_PRIVATE_IP",
 	"db_private_ip": "$VM_DB_PRIVATE_IP",
@@ -233,7 +223,7 @@ az vm extension set \
 		"storageAccountName": "'"$STORAGE_ACCOUNT"'",
 		"storageAccountKey": "'"$STORAGE_ACCOUNT_KEY"'",
 		"fileUris": ["'"$FE_INIT_SCRIPT_URL"'"],
-		"commandToExecute": "'"./$FE_INIT_SCRIPT_NAME $VM_BE_PUBLIC_IP"'"
+		"commandToExecute": "'"./$FE_INIT_SCRIPT_NAME $VM_BE_PRIVATE_IP"'"
 	}' \
   --no-wait \
 
@@ -283,7 +273,6 @@ cat <<EOF
 	"id": "$PREFIX",
 	"resource_group": "$RESOURCE_GROUP",
 	"fe_public_ip": "$VM_FE_PUBLIC_IP",
-	"be_public_ip": "$VM_BE_PUBLIC_IP",
 	"fe_private_ip": "$VM_FE_PRIVATE_IP",
 	"be_private_ip": "$VM_BE_PRIVATE_IP",
 	"db_private_ip": "$VM_DB_PRIVATE_IP",

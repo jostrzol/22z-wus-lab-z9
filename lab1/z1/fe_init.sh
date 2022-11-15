@@ -24,7 +24,18 @@ echo N | npm install -g @angular/cli@11.2.11
 echo N | npm install
 echo N | ng analytics off
 
-sed -i "s/localhost/${BE_URL}/g" src/environments/environment.ts
-sed -i "s/localhost/${BE_URL}/g" src/environments/environment.prod.ts
+sed -i "s#http://localhost:9966##g" src/environments/environment.ts
+sed -i "s#http://localhost:9966##g" src/environments/environment.prod.ts
 
-ng serve --host 0.0.0.0 &
+cat > proxy.conf.json << EOL
+{
+    "/petclinic/api": {
+        "target": "http://${BE_URL}:9966",
+        "secure": false,
+        "changeOrigin": true,
+        "logLevel": "debug"
+    }
+}
+EOL
+
+ng serve --host 0.0.0.0 --proxy-config proxy.conf.json &
