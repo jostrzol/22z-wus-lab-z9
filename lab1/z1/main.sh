@@ -44,7 +44,7 @@ DB_INIT_SCRIPT_URL="$CONTAINER_URI/$DB_INIT_SCRIPT_NAME"
 ## Az Login check
 if az account list 2>&1 | grep -q 'az login'
 then
-    printf >&2 "\n--> Warning: You have to login first with the 'az login' command before you can run this lab tool\n"
+    printf >&2 "\n---login using 'az login' command first\n"
     az login -o table
 fi
 
