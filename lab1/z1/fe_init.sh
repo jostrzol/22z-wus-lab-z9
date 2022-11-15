@@ -17,16 +17,11 @@ export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || pr
 
 nvm install 12.11.1
 
-npm uninstall -g angular-cli @angular/cli
-npm cache clean --force
-echo N | npm install -g @angular/cli@11.2.11
 git clone https://github.com/spring-petclinic/spring-petclinic-angular.git
 cd spring-petclinic-angular || exit
-rm package-lock.json
-npm config set legacy-peer-deps true
-echo N | npm install --save-dev @angular/cli@11.2.11
-npm install
 
+echo N | npm install -g @angular/cli@11.2.11
+echo N | npm install
 echo N | ng analytics off
 
 sed -i "s/localhost/${BE_URL}/g" src/environments/environment.ts
