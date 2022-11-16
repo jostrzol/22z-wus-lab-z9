@@ -2,7 +2,7 @@
 
 # shellcheck source=./lab1/z1/load_config.sh
 source ./load_config.sh
-load_config || exit $?
+load_config "$@" || exit $?
 
 ## Global Variables for defaults
 RAND="$(openssl rand -hex 4)"
@@ -21,8 +21,9 @@ VM_IMAGE="UbuntuLTS"
 
 declare -A VM_PRIVATE_IPS
 declare -A VM_NAMES
-for vm in "${ALL_VMS[@]}"; do
-    last_part=$((vm + 3))
+for i in "${!ALL_VMS[@]}"; do
+    vm="${ALL_VMS[$i]}"
+    last_part=$((i + 100))
     VM_PRIVATE_IPS[$vm]="10.0.0.$last_part"
     VM_NAMES[$vm]="${PREFIX}-vm-$vm"
 done
