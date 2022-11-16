@@ -4,6 +4,9 @@
 source ./load_config.sh
 load_config "$@" || exit $?
 
+# shellcheck source=./lab1/z1/utils.sh
+source ./utils.sh
+
 ## Global Variables for defaults
 RAND="$(openssl rand -hex 4)"
 PREFIX="wus-lab1-zad1-zesp9-${RAND}"
@@ -190,15 +193,7 @@ az storage blob upload-batch \
 
 # Print setup info
 print_stage "SETUP INFO"
-cat <<EOF
-{
-    "id": "$PREFIX",
-    "resource_group": "$RESOURCE_GROUP",
-    "fe_public_ip": "$PUBLIC_IP",
-    "vm_user": "$VM_USER",
-    "vm_password": "$VM_PASSWORD"
-}
-EOF
+print_info
 
 ## Add initialization extensions to VMs
 print_stage "CREATING EXTENSIONS ACCORDING TO CONFIG $CONFIG_NUM"
@@ -208,7 +203,7 @@ add_extension() {
     script=$2
     shift; shift
 
-    print_stage "[ASYNC] EXECUTING $script TO VM $vm WITH ARGS $*"
+    print_stage "[ASYNC] EXECUTING $script TO VM $vm WITH ARGS ${*:-[none]}"
 
     az vm extension set \
         --resource-group "$RESOURCE_GROUP" \
@@ -229,8 +224,8 @@ case "$CONFIG_NUM" in
         BE_VM="${BE_VMS[0]}"
         DB_VM="${DB_VMS[0]}"
 
-        add_extension "$FE_VM" "$FE_INIT_SCRIPT_NAME" "${VM_PRIVATE_IPS[$BE_VM]}"
-        add_extension "$BE_VM" "$BE_INIT_SCRIPT_NAME" "${VM_PRIVATE_IPS[$DB_VM]}"
+        add_extension "$FE_VM" "$FE_INIT_SCRIPT_NAME" "${VM_PRIVATE_IPS[$BE_VM]}" "${VM_PORTS[$BE_VM]}"
+        add_extension "$BE_VM" "$BE_INIT_SCRIPT_NAME" "${VM_PRIVATE_IPS[$DB_VM]}" "${VM_PORTS[$DB_VM]}"
         add_extension "$DB_VM" "$DB_INIT_SCRIPT_NAME"
         ;;
     *)
@@ -249,17 +244,9 @@ az vm extension wait --created --ids $EXTENSION_IDS
 
 # Print setup info
 print_stage "SETUP INFO"
-cat <<EOF
-{
-    "id": "$PREFIX",
-    "resource_group": "$RESOURCE_GROUP",
-    "fe_public_ip": "$PUBLIC_IP",
-    "vm_user": "$VM_USER",
-    "vm_password": "$VM_PASSWORD"
-}
-EOF
+print_info
 
 ## Done
 print_stage "DONE"
-echo >&2 "Petclinic accesible at http://$PUBLIC_IP:4200 (it may require a moment to initialize)"
+echo >&2 "Petclinic accesible at http://$PUBLIC_IP:$FE_PORT (it may require a moment to initialize)"
 echo >&2 "Run ./cleanup.sh to remove the resource group"

@@ -10,8 +10,8 @@ error() {
 }
 
 require_args() {
-    n_args=$1; shift
-    param_name=$1; shift
+    local n_args=$1; shift
+    local param_name=$1; shift
 
     if [ "$#" -lt "$n_args" ]; then
         error "$param_name requires $n_args arguments!"
