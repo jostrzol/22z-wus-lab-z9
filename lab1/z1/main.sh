@@ -22,8 +22,8 @@ VM_USER="adminek"
 VM_PASSWORD="Aa1_$(openssl rand -hex 16)"
 VM_IMAGE="UbuntuLTS"
 
-declare -A VM_PRIVATE_IPS
-declare -A VM_NAMES
+declare -A VM_PRIVATE_IPS=()
+declare -A VM_NAMES=()
 for i in "${!ALL_VMS[@]}"; do
     vm="${ALL_VMS[$i]}"
     last_part=$((i + 100))
@@ -40,7 +40,7 @@ trim() {
     printf '%s' "$var"
 }
 
-declare -A VM_PORTS
+declare -A VM_PORTS=()
 APP_VMS=("$FE_VM" "${BE_VMS[@]}" "${DB_VMS[@]}")
 APP_PORTS=("$FE_PORT" "${BE_PORTS[@]}" "${DB_PORTS[@]}")
 
@@ -122,7 +122,12 @@ for vm in "${ALL_VMS[@]}"; do
     --no-wait
 done
 
-VM_IDS="$(az vm list -g "$RESOURCE_GROUP" --query "[].id" -o tsv)"
+# Collect all vm ids
+while
+    sleep 5
+    VM_IDS="$(az vm list -g "$RESOURCE_GROUP" --query "[].id" -o tsv)"
+    [ "$(echo "$VM_IDS" | wc -w)" -ne "${#ALL_VMS[@]}" ]
+do :; done
 
 ## Wait for all VMs to be ready
 print_stage "WAITING FOR VM CREATION"
@@ -198,12 +203,42 @@ print_info
 ## Add initialization extensions to VMs
 print_stage "CREATING EXTENSIONS ACCORDING TO CONFIG $CONFIG_NUM"
 
-add_extension() {
-    vm=$1
-    script=$2
-    shift; shift
+declare -A VM_FILE_URIS=()
+declare -A VM_CMDS=()
 
-    print_stage "[ASYNC] EXECUTING $script TO VM $vm WITH ARGS ${*:-[none]}"
+add_extension() {
+    vm=$1; shift
+    script=$1; shift
+
+    uris="${VM_FILE_URIS["$vm"]}, \"$CONTAINER_URI/$script\""
+    cmds="${VM_CMDS["$vm"]}; ./$script $*"
+
+    VM_FILE_URIS["$vm"]="${uris#,}"
+    VM_CMDS["$vm"]="${cmds#;}"
+}
+
+case "$CONFIG_NUM" in
+    1)
+        BE_VM="${BE_VMS[0]}"
+        DB_VM="${DB_VMS[0]}"
+        BE_PORT="${BE_PORTS[0]}"
+        DB_PORT="${DB_PORTS[0]}"
+
+
+        add_extension "$FE_VM" "$FE_INIT_SCRIPT_NAME" "${VM_PRIVATE_IPS[$BE_VM]}" "$BE_PORT"
+        add_extension "$BE_VM" "$BE_INIT_SCRIPT_NAME" "${VM_PRIVATE_IPS[$DB_VM]}" "$DB_PORT"
+        add_extension "$DB_VM" "$DB_INIT_SCRIPT_NAME"
+        ;;
+    *)
+        echo >&2 "Configuration not implemented!" && exit
+        ;;
+esac
+
+for vm in "${!VM_FILE_URIS[@]}"; do
+    print_stage "RUNNING '$cmds' ON $vm"
+
+    uris="${VM_FILE_URIS[$vm]}"
+    cmds="${VM_CMDS[$vm]}"
 
     az vm extension set \
         --resource-group "$RESOURCE_GROUP" \
@@ -213,28 +248,19 @@ add_extension() {
         --protected-settings '{
             "storageAccountName": "'"$STORAGE_ACCOUNT"'",
             "storageAccountKey": "'"$STORAGE_ACCOUNT_KEY"'",
-            "fileUris": ["'"$CONTAINER_URI/$script"'"],
-            "commandToExecute": "'"./$script $*"'"
+            "fileUris": [ '"$uris"' ],
+            "commandToExecute": "'"$cmds"'"
         }' \
         --no-wait
-}
+done
 
-case "$CONFIG_NUM" in
-    1)
-        BE_VM="${BE_VMS[0]}"
-        DB_VM="${DB_VMS[0]}"
-
-        add_extension "$FE_VM" "$FE_INIT_SCRIPT_NAME" "${VM_PRIVATE_IPS[$BE_VM]}" "${VM_PORTS[$BE_VM]}"
-        add_extension "$BE_VM" "$BE_INIT_SCRIPT_NAME" "${VM_PRIVATE_IPS[$DB_VM]}" "${VM_PORTS[$DB_VM]}"
-        add_extension "$DB_VM" "$DB_INIT_SCRIPT_NAME"
-        ;;
-    *)
-        echo >&2 "Configuration not implemented!" && exit
-        ;;
-esac
-
-# shellcheck disable=SC2086 # want to split ids here
-EXTENSION_IDS=$(az vm extension list --ids $VM_IDS --query "[].id" -o tsv)
+# Collect all extension ids
+while
+    sleep 5
+    # shellcheck disable=SC2086 # want to split ids here
+    EXTENSION_IDS=$(az vm extension list --ids $VM_IDS --query "[].id" -o tsv)
+    [ "$(echo "$EXTENSION_IDS" | wc -w)" -ne "${#VM_FILE_URIS[@]}" ]
+do :; done
 
 # Waiting for extensions to execute
 print_stage "WAITING FOR EXTENSIONS TO EXECUTE"
