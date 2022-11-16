@@ -1,4 +1,4 @@
-#!/usr/bin/sh
+#!/usr/bin/bash
 
 ## Global Variables for defaults
 RAND="$(openssl rand -hex 4)"
@@ -48,7 +48,7 @@ then
 fi
 
 print_stage() {
-	echo >&2 "========== $1 =========="
+    echo >&2 "========== $1 =========="
 }
 
 ## Create Resource Group
@@ -135,11 +135,11 @@ az vm wait --created --ids $VM_IDS
 print_stage "FETCHING PUBLIC IPS"
 
 VM_FE_PUBLIC_IP=$(
-	az network public-ip show \
-	--resource-group "$RESOURCE_GROUP" \
-	--name "$VM_FE_PUBLIC_IP_NAME" \
-	--query "ipAddress" \
-	--output tsv \
+    az network public-ip show \
+    --resource-group "$RESOURCE_GROUP" \
+    --name "$VM_FE_PUBLIC_IP_NAME" \
+    --query "ipAddress" \
+    --output tsv \
 )
 
 ## Open ports for VMs
@@ -158,32 +158,32 @@ az vm open-port \
 az vm open-port \
 --resource-group "$RESOURCE_GROUP" \
 --name "$VM_DB" \
---port 22,3306  \
+--port 22,3306    \
 
 ## Upload initialization files
 print_stage "UPLOADING INIT FILES"
 
 STORAGE_ACCOUNT_ID="$(
-	az storage account create \
-	--name "$STORAGE_ACCOUNT" \
-	--resource-group "$RESOURCE_GROUP" \
-	--query "id" \
-	--output tsv \
+    az storage account create \
+    --name "$STORAGE_ACCOUNT" \
+    --resource-group "$RESOURCE_GROUP" \
+    --query "id" \
+    --output tsv \
 )"
 
 STORAGE_ACCOUNT_KEY="$(
-	az storage account keys list \
-	--resource-group "$RESOURCE_GROUP" \
-	--account-name "$STORAGE_ACCOUNT" \
-	--query "[0].value" \
-	--output tsv \
+    az storage account keys list \
+    --resource-group "$RESOURCE_GROUP" \
+    --account-name "$STORAGE_ACCOUNT" \
+    --query "[0].value" \
+    --output tsv \
 )"
 
 STORAGE_ACCOUNT_CONNECTION_STRING="$(
-	az storage account show-connection-string \
-	--ids "$STORAGE_ACCOUNT_ID" \
-	--query "connectionString" \
-	--output tsv \
+    az storage account show-connection-string \
+    --ids "$STORAGE_ACCOUNT_ID" \
+    --query "connectionString" \
+    --output tsv \
 )"
 
 az storage container create \
@@ -200,14 +200,14 @@ az storage blob upload-batch \
 print_stage "SETUP INFO"
 cat <<EOF
 {
-	"id": "$PREFIX",
-	"resource_group": "$RESOURCE_GROUP",
-	"fe_public_ip": "$VM_FE_PUBLIC_IP",
-	"fe_private_ip": "$VM_FE_PRIVATE_IP",
-	"be_private_ip": "$VM_BE_PRIVATE_IP",
-	"db_private_ip": "$VM_DB_PRIVATE_IP",
-	"vm_user": "$VM_USER",
-	"vm_password": "$VM_PASSWORD"
+    "id": "$PREFIX",
+    "resource_group": "$RESOURCE_GROUP",
+    "fe_public_ip": "$VM_FE_PUBLIC_IP",
+    "fe_private_ip": "$VM_FE_PRIVATE_IP",
+    "be_private_ip": "$VM_BE_PRIVATE_IP",
+    "db_private_ip": "$VM_DB_PRIVATE_IP",
+    "vm_user": "$VM_USER",
+    "vm_password": "$VM_PASSWORD"
 }
 EOF
 
@@ -215,47 +215,47 @@ EOF
 print_stage "[ASYNC] CREATING EXTENSION FOR FRONTEND VM INITIALIZATION"
 
 az vm extension set \
-  --resource-group "$RESOURCE_GROUP" \
-  --vm-name "$VM_FE" \
-  --name customScript \
-  --publisher Microsoft.Azure.Extensions \
-  --protected-settings '{
-		"storageAccountName": "'"$STORAGE_ACCOUNT"'",
-		"storageAccountKey": "'"$STORAGE_ACCOUNT_KEY"'",
-		"fileUris": ["'"$FE_INIT_SCRIPT_URL"'"],
-		"commandToExecute": "'"./$FE_INIT_SCRIPT_NAME $VM_BE_PRIVATE_IP"'"
-	}' \
-  --no-wait \
+    --resource-group "$RESOURCE_GROUP" \
+    --vm-name "$VM_FE" \
+    --name customScript \
+    --publisher Microsoft.Azure.Extensions \
+    --protected-settings '{
+        "storageAccountName": "'"$STORAGE_ACCOUNT"'",
+        "storageAccountKey": "'"$STORAGE_ACCOUNT_KEY"'",
+        "fileUris": ["'"$FE_INIT_SCRIPT_URL"'"],
+        "commandToExecute": "'"./$FE_INIT_SCRIPT_NAME $VM_BE_PRIVATE_IP"'"
+    }' \
+    --no-wait \
 
 print_stage "[ASYNC] CREATING EXTENSION FOR BACKEND VM INITIALIZATION"
 
 az vm extension set \
-  --resource-group "$RESOURCE_GROUP" \
-  --vm-name "$VM_BE" \
-  --name customScript \
-  --publisher Microsoft.Azure.Extensions \
-  --protected-settings '{
-		"storageAccountName": "'"$STORAGE_ACCOUNT"'",
-		"storageAccountKey": "'"$STORAGE_ACCOUNT_KEY"'",
-		"fileUris": ["'"$BE_INIT_SCRIPT_URL"'"],
-		"commandToExecute": "'"./$BE_INIT_SCRIPT_NAME $VM_DB_PRIVATE_IP"'"
-	}' \
-  --no-wait \
+    --resource-group "$RESOURCE_GROUP" \
+    --vm-name "$VM_BE" \
+    --name customScript \
+    --publisher Microsoft.Azure.Extensions \
+    --protected-settings '{
+        "storageAccountName": "'"$STORAGE_ACCOUNT"'",
+        "storageAccountKey": "'"$STORAGE_ACCOUNT_KEY"'",
+        "fileUris": ["'"$BE_INIT_SCRIPT_URL"'"],
+        "commandToExecute": "'"./$BE_INIT_SCRIPT_NAME $VM_DB_PRIVATE_IP"'"
+    }' \
+    --no-wait \
 
 print_stage "[ASYNC] CREATING EXTENSION FOR DATABASE VM INITIALIZATION"
 
 az vm extension set \
-  --resource-group "$RESOURCE_GROUP" \
-  --vm-name "$VM_DB" \
-  --name customScript \
-  --publisher Microsoft.Azure.Extensions \
-  --protected-settings '{
-		"storageAccountName": "'"$STORAGE_ACCOUNT"'",
-		"storageAccountKey": "'"$STORAGE_ACCOUNT_KEY"'",
-		"fileUris": ["'"$DB_INIT_SCRIPT_URL"'"],
-		"commandToExecute": "'"./$DB_INIT_SCRIPT_NAME"'"
-	}' \
-  --no-wait \
+    --resource-group "$RESOURCE_GROUP" \
+    --vm-name "$VM_DB" \
+    --name customScript \
+    --publisher Microsoft.Azure.Extensions \
+    --protected-settings '{
+        "storageAccountName": "'"$STORAGE_ACCOUNT"'",
+        "storageAccountKey": "'"$STORAGE_ACCOUNT_KEY"'",
+        "fileUris": ["'"$DB_INIT_SCRIPT_URL"'"],
+        "commandToExecute": "'"./$DB_INIT_SCRIPT_NAME"'"
+    }' \
+    --no-wait \
 
 # shellcheck disable=SC2086 # want to split ids here
 EXTENSION_IDS=$(az vm extension list --ids $VM_IDS --query "[].id" -o tsv)
@@ -270,14 +270,14 @@ az vm extension wait --created --ids $EXTENSION_IDS
 print_stage "SETUP INFO"
 cat <<EOF
 {
-	"id": "$PREFIX",
-	"resource_group": "$RESOURCE_GROUP",
-	"fe_public_ip": "$VM_FE_PUBLIC_IP",
-	"fe_private_ip": "$VM_FE_PRIVATE_IP",
-	"be_private_ip": "$VM_BE_PRIVATE_IP",
-	"db_private_ip": "$VM_DB_PRIVATE_IP",
-	"vm_user": "$VM_USER",
-	"vm_password": "$VM_PASSWORD"
+    "id": "$PREFIX",
+    "resource_group": "$RESOURCE_GROUP",
+    "fe_public_ip": "$VM_FE_PUBLIC_IP",
+    "fe_private_ip": "$VM_FE_PRIVATE_IP",
+    "be_private_ip": "$VM_BE_PRIVATE_IP",
+    "db_private_ip": "$VM_DB_PRIVATE_IP",
+    "vm_user": "$VM_USER",
+    "vm_password": "$VM_PASSWORD"
 }
 EOF
 
