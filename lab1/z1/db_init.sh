@@ -1,5 +1,10 @@
 #!/bin/sh
 
+if [ "$#" -ne 1 ]; then
+    echo "Usage: $0 MY_PORT" >&2
+    exit 1
+fi
+
 DB_SCRIPTS_URI="https://raw.githubusercontent.com/spring-petclinic/spring-petclinic-rest/master/src/main/resources/db/mysql"
 
 # Get packages

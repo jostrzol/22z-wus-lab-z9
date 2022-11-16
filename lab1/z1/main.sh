@@ -225,9 +225,9 @@ case "$CONFIG_NUM" in
         DB_PORT="${DB_PORTS[0]}"
 
 
-        add_extension "$FE_VM" "$FE_INIT_SCRIPT_NAME" "${VM_PRIVATE_IPS[$BE_VM]}" "$BE_PORT"
-        add_extension "$BE_VM" "$BE_INIT_SCRIPT_NAME" "${VM_PRIVATE_IPS[$DB_VM]}" "$DB_PORT"
-        add_extension "$DB_VM" "$DB_INIT_SCRIPT_NAME"
+        add_extension "$FE_VM" "$FE_INIT_SCRIPT_NAME" "$FE_PORT" "${VM_PRIVATE_IPS[$BE_VM]}" "$BE_PORT"
+        add_extension "$BE_VM" "$BE_INIT_SCRIPT_NAME" "$BE_PORT" "${VM_PRIVATE_IPS[$DB_VM]}" "$DB_PORT"
+        add_extension "$DB_VM" "$DB_INIT_SCRIPT_NAME" "$DB_PORT"
         ;;
     *)
         echo >&2 "Configuration not implemented!" && exit
@@ -235,10 +235,11 @@ case "$CONFIG_NUM" in
 esac
 
 for vm in "${!VM_FILE_URIS[@]}"; do
-    print_stage "RUNNING '$cmds' ON $vm"
 
     uris="${VM_FILE_URIS[$vm]}"
     cmds="${VM_CMDS[$vm]}"
+
+    print_stage "RUNNING '$cmds' ON $vm"
 
     az vm extension set \
         --resource-group "$RESOURCE_GROUP" \

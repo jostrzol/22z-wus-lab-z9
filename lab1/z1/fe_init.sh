@@ -1,11 +1,11 @@
 #!/bin/sh
 
-if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 BE_ADDRESS BE_PORT" >&2
+if [ "$#" -ne 3 ]; then
+    echo "Usage: $0 MY_PORT BE_ADDRESS BE_PORT" >&2
     exit 1
 fi
 
-BE_URL="$1"
+BE_ADDRESS="$2"
 
 sudo apt update -y
 sudo apt install -y git curl
@@ -30,7 +30,7 @@ sed -i "s#http://localhost:9966##g" src/environments/environment.prod.ts
 cat > proxy.conf.json << EOL
 {
     "/petclinic/api": {
-        "target": "http://${BE_URL}:9966",
+        "target": "http://${BE_ADDRESS}:9966",
         "secure": false,
         "changeOrigin": true,
         "logLevel": "debug"
