@@ -5,6 +5,8 @@ if [ "$#" -ne 1 ]; then
     exit 1
 fi
 
+MY_PORT="$1"
+
 DB_SCRIPTS_URI="https://raw.githubusercontent.com/spring-petclinic/spring-petclinic-rest/master/src/main/resources/db/mysql"
 
 # Get packages
@@ -13,6 +15,7 @@ sudo apt install -y mysql-server wget
 
 # Configure mysql server
 sudo sed 's/\(^bind-address\s*=\).*$/\1 0.0.0.0/' /etc/mysql/mysql.conf.d/mysqld.cnf -i
+sudo sed "s/\\(^port\\s*=\\).*$/\\1 $MY_PORT/" /etc/mysql/mysql.conf.d/mysqld.cnf -i
 
 # Initialize database
 sudo mysql -e "CREATE USER 'pc'@'%' IDENTIFIED BY 'petclinic'; GRANT ALL PRIVILEGES ON *.* TO 'pc'@'%' WITH GRANT OPTION;"

@@ -5,7 +5,9 @@ if [ "$#" -ne 3 ]; then
     exit 1
 fi
 
+MY_PORT="$1"
 DB_ADDRESS="$2"
+DB_PORT="$3"
 
 # Get Packages
 sudo apt update -y
@@ -16,9 +18,10 @@ cd || exit
 git clone https://github.com/spring-petclinic/spring-petclinic-rest.git
 cd spring-petclinic-rest || exit
 
-# Set spring DB properties
-export SPRING_DATASOURCE_URL="jdbc:mysql://$DB_ADDRESS:3306/petclinic?useUnicode=true"
+# Set spring
+export SPRING_DATASOURCE_URL="jdbc:mysql://$DB_ADDRESS:$DB_PORT/petclinic?useUnicode=true"
 export SPRING_PROFILES_ACTIVE=mysql,spring-data-jpa
+export SERVER_PORT="$MY_PORT"
 
 # Start petclinic rest api in background
 ./mvnw spring-boot:run &

@@ -5,7 +5,9 @@ if [ "$#" -ne 3 ]; then
     exit 1
 fi
 
+MY_PORT="$1"
 BE_ADDRESS="$2"
+BE_PORT="$3"
 
 sudo apt update -y
 sudo apt install -y git curl
@@ -30,7 +32,7 @@ sed -i "s#http://localhost:9966##g" src/environments/environment.prod.ts
 cat > proxy.conf.json << EOL
 {
     "/petclinic/api": {
-        "target": "http://${BE_ADDRESS}:9966",
+        "target": "http://${BE_ADDRESS}:$BE_PORT",
         "secure": false,
         "changeOrigin": true,
         "logLevel": "debug"
@@ -38,4 +40,4 @@ cat > proxy.conf.json << EOL
 }
 EOL
 
-ng serve --host 0.0.0.0 --proxy-config proxy.conf.json &
+ng serve --host 0.0.0.0 --proxy-config proxy.conf.json --port "$MY_PORT" &
