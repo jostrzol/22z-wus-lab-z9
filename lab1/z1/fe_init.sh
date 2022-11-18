@@ -10,7 +10,7 @@ BE_ADDRESS="$2"
 BE_PORT="$3"
 
 sudo apt update -y
-sudo apt install -y git curl
+sudo apt install -y git curl nginx
 
 # Install nvm node manager
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.2/install.sh | bash
@@ -29,15 +29,28 @@ echo N | ng analytics off
 sed -i "s#http://localhost:9966##g" src/environments/environment.ts
 sed -i "s#http://localhost:9966##g" src/environments/environment.prod.ts
 
-cat > proxy.conf.json << EOL
-{
-    "/petclinic/api": {
-        "target": "http://${BE_ADDRESS}:$BE_PORT",
-        "secure": false,
-        "changeOrigin": true,
-        "logLevel": "debug"
+ng build --prod --base-href=/petclinic/ --deploy-url=/petclinic/
+
+sudo mkdir /usr/share/nginx/html/petclinic 
+sudo cp -r dist/ /usr/share/nginx/html/petclinic
+
+cat > default << EOL
+server {
+	listen       $MY_PORT default_server;
+    root         /usr/share/nginx/html;
+    index index.html;
+
+	location /petclinic/ {
+        alias /usr/share/nginx/html/petclinic/dist/;
+        try_files \$uri\$args \$uri\$args/ /petclinic/index.html;
+    }
+
+    location /petclinic/api/ {
+        proxy_pass http://${BE_ADDRESS}:$BE_PORT;
+        include proxy_params;
     }
 }
 EOL
+sudo mv default /etc/nginx/sites-enabled/default
 
-ng serve --host 0.0.0.0 --proxy-config proxy.conf.json --port "$MY_PORT" &
+sudo nginx -s reload
