@@ -38,7 +38,7 @@ cat > default << EOL
 server {
 	listen       $MY_PORT default_server;
     root         /usr/share/nginx/html;
-    index index.html;
+    index /petclinic/index.html;
 
 	location /petclinic/ {
         alias /usr/share/nginx/html/petclinic/dist/;
