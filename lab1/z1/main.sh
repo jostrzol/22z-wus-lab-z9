@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 
 # shellcheck source=./lab1/z1/load_config.sh
 source ./load_config.sh
@@ -119,6 +119,7 @@ for vm in "${ALL_VMS[@]}"; do
     --public-ip-sku Standard \
     --public-ip-address "$public_ip" \
     --vnet-name "$VNET_NAME" \
+    --nsg "${VM_NAMES[$vm]}-nsg" \
     --no-wait
 done
 
@@ -150,14 +151,26 @@ PUBLIC_IP=$(
 print_stage "OPENING PORTS FOR VMS"
 
 for vm in "${!VM_PORTS[@]}"; do
-    ports="22,$(echo "${VM_PORTS[$vm]}" | tr ' ' ',')"
+    print_stage "OPENING PORTS (${VM_PORTS[$vm]}) FOR VM $vm"
 
-    print_stage "OPENING PORTS $ports FOR VM $vm"
-
-    az vm open-port \
+    az network nsg rule create \
     --resource-group "$RESOURCE_GROUP" \
-    --name "${VM_NAMES[$vm]}" \
-    --port "$ports"
+    --nsg-name "${VM_NAMES[$vm]}-nsg" \
+    --name "${VM_NAMES[$vm]}-nsg-rule-internal" \
+    --protocol tcp \
+    --priority 1001 \
+    --source-address-prefixes 10.0.0.0/16 \
+    --destination-port-ranges ${VM_PORTS[$vm]}
+
+    if [ "$vm" = "$FE_VM" ]; then
+        az network nsg rule create \
+        --resource-group "$RESOURCE_GROUP" \
+        --nsg-name "${VM_NAMES[$vm]}-nsg" \
+        --name "${VM_NAMES[$vm]}-nsg-rule-fe" \
+        --protocol tcp \
+        --priority 1002 \
+        --destination-port-range $FE_PORT
+    fi
 done
 
 ## Upload initialization files
