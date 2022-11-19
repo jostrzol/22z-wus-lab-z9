@@ -24,7 +24,7 @@ Wdrożenie na 3 maszyny (nazwane vm1, vm2, vm3)
 ./main.sh --config 1 --fe vm1 80 --be vm2 9967 --db vm3 1434
 ```
 
-Wdrożenie na 2 maszyny (nazwane vm1, vm2, vm3)
+Wdrożenie na 2 maszyny (nazwane vm1, vm2)
 
 ```sh
 ./main.sh --config 1 --fe vm1 80 --be vm1 9967 --db vm2 1434
@@ -32,4 +32,4 @@ Wdrożenie na 2 maszyny (nazwane vm1, vm2, vm3)
 
 ## Pomocniczy skrypt cleanup.sh
 
-Skrypt pozwala na wyczyszczenie wszystkich zasobów stworzonych przez `cleanup.sh`.
+Skrypt pozwala na wyczyszczenie wszystkich zasobów stworzonych przez `main.sh`.
