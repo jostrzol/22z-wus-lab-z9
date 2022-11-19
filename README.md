@@ -18,9 +18,13 @@ Powtarzanie tej samej `NAZWA_VM` oznacza deployment na tę samą maszynę.
 
 ## Przykłady użycia skrytpu
 
+Wdrożenie na 3 maszyny (nazwane vm1, vm2, vm3)
+
 ```sh
 ./main.sh --config 1 --fe vm1 80 --be vm2 9967 --db vm3 1434
 ```
+
+Wdrożenie na 2 maszyny (nazwane vm1, vm2, vm3)
 
 ```sh
 ./main.sh --config 1 --fe vm1 80 --be vm1 9967 --db vm2 1434
