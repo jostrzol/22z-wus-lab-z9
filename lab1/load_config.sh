@@ -77,6 +77,13 @@ load_config() {
                 error "config 1 requires exactly 1 database"
             fi
             ;;
+        2)
+            if [ "${#BE_VMS[@]}" -ne 1 ]; then
+                error "config 1 requires exactly 1 backend"
+            elif [ "${#DB_VMS[@]}" -ne 2 ]; then
+                error "config 1 requires exactly 2 databases"
+            fi
+            ;;
         *)
             error "config $CONFIG_NUM unimplemented";;
     esac

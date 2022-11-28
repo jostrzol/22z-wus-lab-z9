@@ -244,19 +244,20 @@ case "$CONFIG_NUM" in
         add_extension "$BE_VM" "$BE_INIT_SCRIPT_NAME" "$BE_PORT" "${VM_PRIVATE_IPS[$DB_VM]}" "$DB_PORT"
         add_extension "$DB_VM" "$DB_INIT_SCRIPT_NAME" "$DB_PORT"
         ;;
-    1)
+    2)
         BE_VM="${BE_VMS[0]}"
         DB_MASTER_VM="${DB_VMS[0]}"
         DB_SLAVE_VM="${DB_VMS[1]}"
         BE_PORT="${BE_PORTS[0]}"
         DB_MASTER_PORT="${DB_PORTS[0]}"
         DB_SLAVE_PORT="${DB_PORTS[0]}"
+        DB_MASTER_PRIVATE_IP="${VM_PRIVATE_IPS[$DB_MASTER_VM]}"
 
 
         add_extension "$DB_MASTER_VM" "$DB_INIT_SCRIPT_NAME" "$DB_MASTER_PORT"
         add_extension "$DB_SLAVE_VM" "$DB_INIT_SCRIPT_NAME" "$DB_SLAVE_PORT"
-        dd_extension "$DB_MASTER_VM" "$DB_MASTER_SCRIPT_NAME"
-        add_extension "$DB_SLAVE_VM" "$DB_SLAVE_SCRIPT_NAME"
+        add_extension "$DB_MASTER_VM" "$DB_MASTER_SCRIPT_NAME" 
+        add_extension "$DB_SLAVE_VM" "$DB_SLAVE_SCRIPT_NAME" "$DB_MASTER_PRIVATE_IP"
         add_extension "$FE_VM" "$FE_INIT_SCRIPT_NAME" "$FE_PORT" "${VM_PRIVATE_IPS[$BE_VM]}" "$BE_PORT"
         add_extension "$BE_VM" "$BE_INIT_SCRIPT_NAME" "$BE_PORT" "${VM_PRIVATE_IPS[$DB_VM]}" "$DB_PORT"
         ;;
