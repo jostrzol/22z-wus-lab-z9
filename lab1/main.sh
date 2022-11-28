@@ -41,8 +41,8 @@ trim() {
 }
 
 declare -A VM_PORTS=()
-APP_VMS=("$FE_VM" "${BE_VMS[@]}" "${DB_VMS[@]}")
-APP_PORTS=("$FE_PORT" "${BE_PORTS[@]}" "${DB_PORTS[@]}")
+APP_VMS=("$FE_VM" "$LB_VM" "${BE_VMS[@]}" "${DB_VMS[@]}")
+APP_PORTS=("$FE_PORT" "$LB_PORT" "${BE_PORTS[@]}" "${DB_PORTS[@]}")
 
 for i in "${!APP_VMS[@]}"; do
     vm="${APP_VMS[$i]}"
@@ -55,6 +55,7 @@ CONTAINER_NAME="$PREFIX-container"
 CONTAINER_URI="https://$STORAGE_ACCOUNT.blob.core.windows.net/$CONTAINER_NAME"
 
 FE_INIT_SCRIPT_NAME="fe_init.sh"
+LB_INIT_SCRIPT_NAME="lb_init.sh"
 BE_INIT_SCRIPT_NAME="be_init.sh"
 DB_INIT_SCRIPT_NAME="db_init.sh"
 
@@ -241,6 +242,18 @@ case "$CONFIG_NUM" in
         add_extension "$FE_VM" "$FE_INIT_SCRIPT_NAME" "$FE_PORT" "${VM_PRIVATE_IPS[$BE_VM]}" "$BE_PORT"
         add_extension "$BE_VM" "$BE_INIT_SCRIPT_NAME" "$BE_PORT" "${VM_PRIVATE_IPS[$DB_VM]}" "$DB_PORT"
         add_extension "$DB_VM" "$DB_INIT_SCRIPT_NAME" "$DB_PORT"
+        ;;
+    4)
+        BE1_VM="${BE_VMS[0]}"
+        BE2_VM="${BE_VMS[1]}"
+        DB_VM="${DB_VMS[0]}"
+
+
+        add_extension "$FE_VM" "$FE_INIT_SCRIPT_NAME" "$FE_PORT" "${VM_PRIVATE_IPS[$LB_VM]}" "$LB_PORT"
+        add_extension "$LB_VM" "$LB_INIT_SCRIPT_NAME" "$LB_PORT" "${VM_PRIVATE_IPS[$BE1_VM]}" "${BE_PORTS[0]}" "${VM_PRIVATE_IPS[$BE2_VM]}" "${BE_PORTS[1]}"
+        add_extension "$BE1_VM" "$BE_INIT_SCRIPT_NAME" "${BE_PORTS[0]}" "${VM_PRIVATE_IPS[$DB_VM]}" "${DB_PORTS[0]}"
+        add_extension "$BE2_VM" "$BE_INIT_SCRIPT_NAME" "${BE_PORTS[1]}" "${VM_PRIVATE_IPS[$DB_VM]}" "${DB_PORTS[0]}"
+        add_extension "$DB_VM" "$DB_INIT_SCRIPT_NAME" "${DB_PORTS[0]}"
         ;;
     *)
         echo >&2 "Configuration not implemented!" && exit
