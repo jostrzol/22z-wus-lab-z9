@@ -57,8 +57,8 @@ CONTAINER_URI="https://$STORAGE_ACCOUNT.blob.core.windows.net/$CONTAINER_NAME"
 FE_INIT_SCRIPT_NAME="fe_init.sh"
 BE_INIT_SCRIPT_NAME="be_init.sh"
 DB_INIT_SCRIPT_NAME="db_init.sh"
-DB_MASTER_SCRIPT_NAME="db_master.sh"
-DB_SLAVE_SCRIPT_NAME="db_slave.sh"
+DB_MASTER_SCRIPT_NAME="db_master_init.sh"
+DB_SLAVE_SCRIPT_NAME="db_slave_init.sh"
 
 ## Az Login check
 if az account list 2>&1 | grep -q 'az login'
@@ -209,7 +209,7 @@ az storage blob upload-batch \
 --source "$(pwd)" \
 --destination "$CONTAINER_NAME" \
 --connection-string "$STORAGE_ACCOUNT_CONNECTION_STRING" \
---pattern "??_init.sh" \
+--pattern "*_init.sh" \
 
 # Print setup info
 print_stage "SETUP INFO"
@@ -250,16 +250,16 @@ case "$CONFIG_NUM" in
         DB_SLAVE_VM="${DB_VMS[1]}"
         BE_PORT="${BE_PORTS[0]}"
         DB_MASTER_PORT="${DB_PORTS[0]}"
-        DB_SLAVE_PORT="${DB_PORTS[0]}"
+        DB_SLAVE_PORT="${DB_PORTS[1]}"
         DB_MASTER_PRIVATE_IP="${VM_PRIVATE_IPS[$DB_MASTER_VM]}"
 
 
         add_extension "$DB_MASTER_VM" "$DB_INIT_SCRIPT_NAME" "$DB_MASTER_PORT"
         add_extension "$DB_SLAVE_VM" "$DB_INIT_SCRIPT_NAME" "$DB_SLAVE_PORT"
-        add_extension "$DB_MASTER_VM" "$DB_MASTER_SCRIPT_NAME" 
-        add_extension "$DB_SLAVE_VM" "$DB_SLAVE_SCRIPT_NAME" "$DB_MASTER_PRIVATE_IP"
+        add_extension "$DB_MASTER_VM" "$DB_MASTER_SCRIPT_NAME"
+        add_extension "$DB_SLAVE_VM" "$DB_SLAVE_SCRIPT_NAME" "$DB_MASTER_PRIVATE_IP" "$DB_MASTER_PORT"
         add_extension "$FE_VM" "$FE_INIT_SCRIPT_NAME" "$FE_PORT" "${VM_PRIVATE_IPS[$BE_VM]}" "$BE_PORT"
-        add_extension "$BE_VM" "$BE_INIT_SCRIPT_NAME" "$BE_PORT" "${VM_PRIVATE_IPS[$DB_VM]}" "$DB_PORT"
+        add_extension "$BE_VM" "$BE_INIT_SCRIPT_NAME" "$BE_PORT" "$DB_MASTER_PRIVATE_IP" "$DB_MASTER_PORT"
         ;;
     *)
         echo >&2 "Configuration not implemented!" && exit
