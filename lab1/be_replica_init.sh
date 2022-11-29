@@ -21,7 +21,7 @@ git clone https://github.com/spring-petclinic/spring-petclinic-rest.git
 cd spring-petclinic-rest || exit
 
 # Set spring
-export SPRING_DATASOURCE_URL="jdbc:mysql:replication://$DB_MASTER_ADDRESS:$DB_MASTER_PORT,$DB_SLAVE_ADDRESS,$DB_SLAVE_PORT/petclinic?useUnicode=true&allowSourceDownConnections=true"
+export SPRING_DATASOURCE_URL="jdbc:mysql:replication://$DB_MASTER_ADDRESS:$DB_MASTER_PORT,$DB_SLAVE_ADDRESS:$DB_SLAVE_PORT/petclinic?useUnicode=true&allowSourceDownConnections=true"
 export SPRING_PROFILES_ACTIVE=mysql,spring-data-jpa
 export SERVER_PORT="$MY_PORT"
 

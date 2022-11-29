@@ -56,6 +56,7 @@ CONTAINER_URI="https://$STORAGE_ACCOUNT.blob.core.windows.net/$CONTAINER_NAME"
 
 FE_INIT_SCRIPT_NAME="fe_init.sh"
 BE_INIT_SCRIPT_NAME="be_init.sh"
+BE_REPLICA_INIT_SCRIPT_NAME="be_replica_init.sh"
 DB_INIT_SCRIPT_NAME="db_init.sh"
 DB_MASTER_SCRIPT_NAME="db_master_init.sh"
 DB_SLAVE_SCRIPT_NAME="db_slave_init.sh"
@@ -260,6 +261,7 @@ case "$CONFIG_NUM" in
         add_extension "$DB_SLAVE_VM" "$DB_SLAVE_SCRIPT_NAME" "$DB_MASTER_PRIVATE_IP" "$DB_MASTER_PORT"
         add_extension "$FE_VM" "$FE_INIT_SCRIPT_NAME" "$FE_PORT" "${VM_PRIVATE_IPS[$BE_VM]}" "$BE_PORT"
         add_extension "$BE_VM" "$BE_INIT_SCRIPT_NAME" "$BE_PORT" "$DB_MASTER_PRIVATE_IP" "$DB_MASTER_PORT"
+        # add_extension "$BE_VM" "$BE_REPLICA_INIT_SCRIPT_NAME" "$BE_PORT" "$DB_MASTER_PRIVATE_IP" "$DB_MASTER_PORT" "$DB_SLAVE_PRIVATE_IP" "$DB_SLAVE_PORT"
         ;;
     *)
         echo >&2 "Configuration not implemented!" && exit
