@@ -87,9 +87,9 @@ load_config() {
             ;;
         2)
             if [ "${#BE_VMS[@]}" -ne 1 ]; then
-                error "config 1 requires exactly 1 backend"
+                error "config 2 requires exactly 1 backend"
             elif [ "${#DB_VMS[@]}" -ne 2 ]; then
-                error "config 1 requires exactly 2 databases"
+                error "config 2 requires exactly 2 databases"
             fi
             ;;
         4)
