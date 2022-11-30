@@ -85,6 +85,13 @@ load_config() {
                 error "config 1 requires exactly 1 database"
             fi
             ;;
+        2)
+            if [ "${#BE_VMS[@]}" -ne 1 ]; then
+                error "config 1 requires exactly 1 backend"
+            elif [ "${#DB_VMS[@]}" -ne 2 ]; then
+                error "config 1 requires exactly 2 databases"
+            fi
+            ;;
         4)
             # TODO master/slave databases
             # for now this is implemented like config 2 (frontend, nginx, many backends, one database)
