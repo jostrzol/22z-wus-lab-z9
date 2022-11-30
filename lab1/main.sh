@@ -265,16 +265,22 @@ case "$CONFIG_NUM" in
         # add_extension "$BE_VM" "$BE_REPLICA_INIT_SCRIPT_NAME" "$BE_PORT" "$DB_MASTER_PRIVATE_IP" "$DB_MASTER_PORT" "$DB_SLAVE_PRIVATE_IP" "$DB_SLAVE_PORT"
         ;;
     4)
-        BE1_VM="${BE_VMS[0]}"
-        BE2_VM="${BE_VMS[1]}"
-        DB_VM="${DB_VMS[0]}"
+        BE_WRITE_VM="${BE_VMS[0]}"
+        BE_READ_VM="${BE_VMS[1]}"
+        DB_MASTER_VM="${DB_VMS[0]}"
+        DB_SLAVE_VM="${DB_VMS[1]}"
 
+        add_extension "$DB_MASTER_VM" "$DB_INIT_SCRIPT_NAME" "${DB_PORTS[0]}"
+        add_extension "$DB_MASTER_VM" "$DB_MASTER_SCRIPT_NAME"
+        add_extension "$DB_SLAVE_VM" "$DB_INIT_SCRIPT_NAME" "${DB_PORTS[1]}"
+        add_extension "$DB_SLAVE_VM" "$DB_SLAVE_SCRIPT_NAME" "${VM_PRIVATE_IPS[$DB_MASTER_VM]}" "${DB_PORTS[0]}"
+
+        add_extension "$BE_WRITE_VM" "$BE_INIT_SCRIPT_NAME" "${BE_PORTS[0]}" "${VM_PRIVATE_IPS[$DB_MASTER_VM]}" "${DB_PORTS[0]}"
+        add_extension "$BE_READ_VM" "$BE_INIT_SCRIPT_NAME" "${BE_PORTS[1]}" "${VM_PRIVATE_IPS[$DB_SLAVE_VM]}" "${DB_PORTS[1]}"
+
+        add_extension "$LB_VM" "$LB_INIT_SCRIPT_NAME" "$LB_PORT" "${VM_PRIVATE_IPS[$BE_WRITE_VM]}" "${BE_PORTS[0]}" "${VM_PRIVATE_IPS[$BE_READ_VM]}" "${BE_PORTS[1]}"
 
         add_extension "$FE_VM" "$FE_INIT_SCRIPT_NAME" "$FE_PORT" "${VM_PRIVATE_IPS[$LB_VM]}" "$LB_PORT"
-        add_extension "$LB_VM" "$LB_INIT_SCRIPT_NAME" "$LB_PORT" "${VM_PRIVATE_IPS[$BE1_VM]}" "${BE_PORTS[0]}" "${VM_PRIVATE_IPS[$BE2_VM]}" "${BE_PORTS[1]}"
-        add_extension "$BE1_VM" "$BE_INIT_SCRIPT_NAME" "${BE_PORTS[0]}" "${VM_PRIVATE_IPS[$DB_VM]}" "${DB_PORTS[0]}"
-        add_extension "$BE2_VM" "$BE_INIT_SCRIPT_NAME" "${BE_PORTS[1]}" "${VM_PRIVATE_IPS[$DB_VM]}" "${DB_PORTS[0]}"
-        add_extension "$DB_VM" "$DB_INIT_SCRIPT_NAME" "${DB_PORTS[0]}"
         ;;
     *)
         echo >&2 "Configuration not implemented!" && exit

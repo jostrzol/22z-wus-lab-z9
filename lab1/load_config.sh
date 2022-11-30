@@ -93,14 +93,12 @@ load_config() {
             fi
             ;;
         4)
-            # TODO master/slave databases
-            # for now this is implemented like config 2 (frontend, nginx, many backends, one database)
             if [ -z "$LB_VM" ]; then
                 error "config 4 requires a load balancer"
             elif [ "${#BE_VMS[@]}" -ne 2 ]; then
                 error "config 4 requires exactly 2 backends"
-            elif [ "${#DB_VMS[@]}" -ne 1 ]; then
-                error "config 4 requires exactly 1 database"
+            elif [ "${#DB_VMS[@]}" -ne 2 ]; then
+                error "config 4 requires exactly 2 databases"
             fi
             ;;
         *)
