@@ -41,8 +41,8 @@ trim() {
 }
 
 declare -A VM_PORTS=()
-APP_VMS=("$FE_VM" "${BE_VMS[@]}" "${DB_VMS[@]}")
-APP_PORTS=("$FE_PORT" "${BE_PORTS[@]}" "${DB_PORTS[@]}")
+APP_VMS=("$FE_VM" "$LB_VM" "${BE_VMS[@]}" "${DB_VMS[@]}")
+APP_PORTS=("$FE_PORT" "$LB_PORT" "${BE_PORTS[@]}" "${DB_PORTS[@]}")
 
 for i in "${!APP_VMS[@]}"; do
     vm="${APP_VMS[$i]}"
@@ -55,8 +55,12 @@ CONTAINER_NAME="$PREFIX-container"
 CONTAINER_URI="https://$STORAGE_ACCOUNT.blob.core.windows.net/$CONTAINER_NAME"
 
 FE_INIT_SCRIPT_NAME="fe_init.sh"
+LB_INIT_SCRIPT_NAME="lb_init.sh"
 BE_INIT_SCRIPT_NAME="be_init.sh"
+BE_REPLICA_INIT_SCRIPT_NAME="be_replica_init.sh"
 DB_INIT_SCRIPT_NAME="db_init.sh"
+DB_MASTER_SCRIPT_NAME="db_master_init.sh"
+DB_SLAVE_SCRIPT_NAME="db_slave_init.sh"
 
 ## Az Login check
 if az account list 2>&1 | grep -q 'az login'
@@ -207,7 +211,7 @@ az storage blob upload-batch \
 --source "$(pwd)" \
 --destination "$CONTAINER_NAME" \
 --connection-string "$STORAGE_ACCOUNT_CONNECTION_STRING" \
---pattern "??_init.sh" \
+--pattern "*_init.sh" \
 
 # Print setup info
 print_stage "SETUP INFO"
@@ -241,6 +245,42 @@ case "$CONFIG_NUM" in
         add_extension "$FE_VM" "$FE_INIT_SCRIPT_NAME" "$FE_PORT" "${VM_PRIVATE_IPS[$BE_VM]}" "$BE_PORT"
         add_extension "$BE_VM" "$BE_INIT_SCRIPT_NAME" "$BE_PORT" "${VM_PRIVATE_IPS[$DB_VM]}" "$DB_PORT"
         add_extension "$DB_VM" "$DB_INIT_SCRIPT_NAME" "$DB_PORT"
+        ;;
+    2)
+        BE_VM="${BE_VMS[0]}"
+        DB_MASTER_VM="${DB_VMS[0]}"
+        DB_SLAVE_VM="${DB_VMS[1]}"
+        BE_PORT="${BE_PORTS[0]}"
+        DB_MASTER_PORT="${DB_PORTS[0]}"
+        DB_SLAVE_PORT="${DB_PORTS[1]}"
+        DB_MASTER_PRIVATE_IP="${VM_PRIVATE_IPS[$DB_MASTER_VM]}"
+
+
+        add_extension "$DB_MASTER_VM" "$DB_INIT_SCRIPT_NAME" "$DB_MASTER_PORT"
+        add_extension "$DB_SLAVE_VM" "$DB_INIT_SCRIPT_NAME" "$DB_SLAVE_PORT"
+        add_extension "$DB_MASTER_VM" "$DB_MASTER_SCRIPT_NAME"
+        add_extension "$DB_SLAVE_VM" "$DB_SLAVE_SCRIPT_NAME" "$DB_MASTER_PRIVATE_IP" "$DB_MASTER_PORT"
+        add_extension "$FE_VM" "$FE_INIT_SCRIPT_NAME" "$FE_PORT" "${VM_PRIVATE_IPS[$BE_VM]}" "$BE_PORT"
+        add_extension "$BE_VM" "$BE_INIT_SCRIPT_NAME" "$BE_PORT" "$DB_MASTER_PRIVATE_IP" "$DB_MASTER_PORT"
+        # add_extension "$BE_VM" "$BE_REPLICA_INIT_SCRIPT_NAME" "$BE_PORT" "$DB_MASTER_PRIVATE_IP" "$DB_MASTER_PORT" "$DB_SLAVE_PRIVATE_IP" "$DB_SLAVE_PORT"
+        ;;
+    4)
+        BE_WRITE_VM="${BE_VMS[0]}"
+        BE_READ_VM="${BE_VMS[1]}"
+        DB_MASTER_VM="${DB_VMS[0]}"
+        DB_SLAVE_VM="${DB_VMS[1]}"
+
+        add_extension "$DB_MASTER_VM" "$DB_INIT_SCRIPT_NAME" "${DB_PORTS[0]}"
+        add_extension "$DB_MASTER_VM" "$DB_MASTER_SCRIPT_NAME"
+        add_extension "$DB_SLAVE_VM" "$DB_INIT_SCRIPT_NAME" "${DB_PORTS[1]}"
+        add_extension "$DB_SLAVE_VM" "$DB_SLAVE_SCRIPT_NAME" "${VM_PRIVATE_IPS[$DB_MASTER_VM]}" "${DB_PORTS[0]}"
+
+        add_extension "$BE_WRITE_VM" "$BE_INIT_SCRIPT_NAME" "${BE_PORTS[0]}" "${VM_PRIVATE_IPS[$DB_MASTER_VM]}" "${DB_PORTS[0]}"
+        add_extension "$BE_READ_VM" "$BE_INIT_SCRIPT_NAME" "${BE_PORTS[1]}" "${VM_PRIVATE_IPS[$DB_SLAVE_VM]}" "${DB_PORTS[1]}"
+
+        add_extension "$LB_VM" "$LB_INIT_SCRIPT_NAME" "$LB_PORT" "${VM_PRIVATE_IPS[$BE_WRITE_VM]}" "${BE_PORTS[0]}" "${VM_PRIVATE_IPS[$BE_READ_VM]}" "${BE_PORTS[1]}"
+
+        add_extension "$FE_VM" "$FE_INIT_SCRIPT_NAME" "$FE_PORT" "${VM_PRIVATE_IPS[$LB_VM]}" "$LB_PORT"
         ;;
     *)
         echo >&2 "Configuration not implemented!" && exit

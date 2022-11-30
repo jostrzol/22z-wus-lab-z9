@@ -22,10 +22,12 @@ load_config() {
     export CONFIG_NUM=
 
     export FE_VM=
+    export LB_VM=
     export BE_VMS=()
     export DB_VMS=()
 
     export FE_PORT=
+    export LB_PORT=
     export BE_PORTS=()
     export DB_PORTS=()
 
@@ -41,6 +43,12 @@ load_config() {
                 require_args 2 fe "$@"
                 FE_VM="$1"; shift
                 FE_PORT="$1"; shift
+                ;;
+            --lb|--loadbalancer)
+                shift;
+                require_args 2 lb "$@"
+                LB_VM="$1"; shift
+                LB_PORT="$1"; shift
                 ;;
             --be|--backend)
                 shift;
@@ -77,10 +85,26 @@ load_config() {
                 error "config 1 requires exactly 1 database"
             fi
             ;;
+        2)
+            if [ "${#BE_VMS[@]}" -ne 1 ]; then
+                error "config 2 requires exactly 1 backend"
+            elif [ "${#DB_VMS[@]}" -ne 2 ]; then
+                error "config 2 requires exactly 2 databases"
+            fi
+            ;;
+        4)
+            if [ -z "$LB_VM" ]; then
+                error "config 4 requires a load balancer"
+            elif [ "${#BE_VMS[@]}" -ne 2 ]; then
+                error "config 4 requires exactly 2 backends"
+            elif [ "${#DB_VMS[@]}" -ne 2 ]; then
+                error "config 4 requires exactly 2 databases"
+            fi
+            ;;
         *)
             error "config $CONFIG_NUM unimplemented";;
     esac
 
-    mapfile -t ALL_VMS < <(unique "$FE_VM" "${BE_VMS[@]}" "${DB_VMS[@]}")
+    mapfile -t ALL_VMS < <(unique "$FE_VM" "$LB_VM" "${BE_VMS[@]}" "${DB_VMS[@]}")
     export ALL_VMS
 }
