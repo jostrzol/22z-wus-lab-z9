@@ -40,10 +40,17 @@ trim() {
     printf '%s' "$var"
 }
 
-declare -A VM_PORTS=()
-APP_VMS=("$FE_VM" "$LB_VM" "${BE_VMS[@]}" "${DB_VMS[@]}")
-APP_PORTS=("$FE_PORT" "$LB_PORT" "${BE_PORTS[@]}" "${DB_PORTS[@]}")
+APP_VMS=("$FE_VM" "${BE_VMS[@]}" "${DB_VMS[@]}")
+if [ -n "$LB_VM" ]; then
+    APP_VMS+=("$LB_VM")
+fi
 
+APP_PORTS=("$FE_PORT" "${BE_PORTS[@]}" "${DB_PORTS[@]}")
+if [ -n "$LB_PORT" ]; then
+    APP_PORTS+=("$LB_PORT")
+fi
+
+declare -A VM_PORTS=()
 for i in "${!APP_VMS[@]}"; do
     vm="${APP_VMS[$i]}"
     port="${APP_PORTS[$i]}"

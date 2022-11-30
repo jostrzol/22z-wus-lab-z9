@@ -105,6 +105,9 @@ load_config() {
             error "config $CONFIG_NUM unimplemented";;
     esac
 
-    mapfile -t ALL_VMS < <(unique "$FE_VM" "$LB_VM" "${BE_VMS[@]}" "${DB_VMS[@]}")
+    mapfile -t ALL_VMS < <(unique "$FE_VM" "${BE_VMS[@]}" "${DB_VMS[@]}")
+    if [ -n "$LB_VM" ]; then
+        ALL_VMS+=("$LB_VM")
+    fi
     export ALL_VMS
 }
