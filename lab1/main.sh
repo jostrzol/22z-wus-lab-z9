@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# shellcheck source=./lab1/z1/load_config.sh
+# shellcheck source=./lab1/load_config.sh
 source ./load_config.sh
 load_config "$@" || exit $?
 
-# shellcheck source=./lab1/z1/utils.sh
+# shellcheck source=./lab1/utils.sh
 source ./utils.sh
 
 ## Global Variables for defaults
