@@ -15,3 +15,10 @@ RUN ng build --prod --base-href=/petclinic/ --deploy-url=/petclinic/
 FROM nginx
 COPY --from=build-env /spring-petclinic-angular/dist /usr/share/nginx/html/petclinic
 COPY nginx.conf /etc/nginx/sites-enabled/default
+
+ENTRYPOINT ["/bin/sh", "-c" , " \
+    envsubst '$BE_ADDRESS $BE_PORT' \
+    < /etc/nginx/sites-enabled/default \
+    > /tmpdefault && mv /tmpdefault /etc/nginx/sites-enabled/default && \
+    cat /etc/nginx/sites-enabled/default && \
+    nginx -g 'daemon off;'"]
