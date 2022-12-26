@@ -1,0 +1,40 @@
+- hosts: all
+  become: yes
+  tasks:
+    - name: Update and upgrade apt packages
+      become: true
+      apt:
+        upgrade: yes
+        update_cache: yes
+        cache_valid_time: 86400 # One day
+    - name: Install docker
+      apt:
+        name: docker
+        state: latest
+    - name: Install docker.io
+      apt:
+        name: docker.io
+        state: latest
+    - name: Addgroup docker
+      ansible.builtin.group:
+        name: docker
+        state: present
+    - name: Add {{ ansible_user }} to docker group 
+      command: usermod -aG docker {{ ansible_user }}
+    - name: reset ssh connection
+      meta: reset_connection
+      become: no
+    - name: Ensures fe dir exists
+      file: path=/fe/ state=directory
+    - name: Copy FE Dockerfile
+      ansible.builtin.copy:
+        src: ./fe/
+        dest: /fe/
+    - name: Stop existing FE container(s)
+      command: docker stop $(docker ps -q --filter ancestor=wus-fe )
+    - name: Build FE image
+      command: docker build -t wus-fe /fe
+    - name: Run FE image
+      command: docker run --rm -d -p 8080:80 -e BE_ADDRESS=localhost -e BE_PORT=8081 wus-fe
+
+# TODO: parametrize BE_ADDRESS and BE_PORT

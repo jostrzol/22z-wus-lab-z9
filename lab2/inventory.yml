@@ -1,0 +1,8 @@
+all:
+  vars:
+    ansible_user: <USER>
+  children:
+    azurevms:
+      hosts:
+        azvm1:
+          ansible_host: <IP>
