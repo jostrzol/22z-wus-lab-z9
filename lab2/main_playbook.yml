@@ -26,15 +26,42 @@
       become: no
     - name: Ensures fe dir exists
       file: path=/fe/ state=directory
+
+      # DB
+    - name: Copy DB Dockerfile
+      ansible.builtin.copy:
+        src: ./db/
+        dest: /db/
+    - name: Stop existing DB container(s)
+      shell: docker ps -q --filter ancestor=wus-db | xargs --no-run-if-empty docker stop
+    - name: Build DB image
+      command: docker build -t wus-db /db
+    - name: Run DB image
+      command: docker run --rm -d -p 8082:3306 wus-db
+      
+      # BE
+    - name: Copy BE Dockerfile
+      ansible.builtin.copy:
+        src: ./be/
+        dest: /be/
+    - name: Stop existing BE container(s)
+      shell: docker ps -q --filter ancestor=wus-be | xargs --no-run-if-empty docker stop
+    - name: Build BE image
+      command: docker build -t wus-be /be
+    - name: Run BE image
+      command: docker run --rm -d -p 8081:8081 -e DB_ADDRESS=172.17.0.2 -e DB_PORT=8082 wus-be
+      
+    # FE
     - name: Copy FE Dockerfile
       ansible.builtin.copy:
         src: ./fe/
         dest: /fe/
     - name: Stop existing FE container(s)
-      command: docker stop $(docker ps -q --filter ancestor=wus-fe )
+      shell: docker ps -q --filter ancestor=wus-fe | xargs --no-run-if-empty docker stop
     - name: Build FE image
       command: docker build -t wus-fe /fe
     - name: Run FE image
-      command: docker run --rm -d -p 8080:80 -e BE_ADDRESS=localhost -e BE_PORT=8081 wus-fe
+      command: docker run --rm -d -p 8080:80 -e BE_ADDRESS=172.17.0.3 -e BE_PORT=8081 wus-fe
 
-# TODO: parametrize BE_ADDRESS and BE_PORT
+
+# TODO: parametrize addresses and ports
