@@ -2,7 +2,7 @@
 # * DB_ADDRESS
 # * DB_PORT
 
-# WILL RUN ON PORT 8080
+# WILL RUN ON PORT 8081
 
 FROM maven:3.8.6-eclipse-temurin-11-alpine as build-env
 
@@ -13,7 +13,7 @@ WORKDIR /spring-petclinic-rest
 RUN mvn package
 
 ENV SPRING_PROFILES_ACTIVE="mysql,spring-data-jpa" \
-    SERVER_PORT="8080"
+    SERVER_PORT="8081"
 
 ENTRYPOINT \
     SPRING_DATASOURCE_URL="jdbc:mysql://${DB_ADDRESS}:${DB_PORT}/petclinic?useUnicode=true" \
