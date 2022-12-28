@@ -1,8 +1,20 @@
 all:
   vars:
     ansible_user: <USER>
+    be_host: 172.17.0.3
+    be_port: 8081
+    db_host: 172.17.0.1
+    db_port: 8082
+    fe_port: 8080
   children:
     azurevms:
       hosts:
-        azvm1:
+        db_vm:
           ansible_host: <IP>
+          ansible_ssh_private_key_file: <SSK_KEY_LOCATION>
+        be_vm:
+          ansible_host: <IP>
+          ansible_ssh_private_key_file: <SSK_KEY_LOCATION>
+        fe_vm:
+          ansible_host: <IP>
+          ansible_ssh_private_key_file: <SSK_KEY_LOCATION>

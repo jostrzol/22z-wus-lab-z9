@@ -1,5 +1,11 @@
+#
+# Setup each machine to run docker
+#
+
 - hosts: all
   become: yes
+  tags: 
+    - setup
   tasks:
     - name: Update and upgrade apt packages
       become: true
@@ -7,6 +13,10 @@
         upgrade: yes
         update_cache: yes
         cache_valid_time: 86400 # One day
+      register: result
+      until: result is not failed
+      retries: 10 # Acquire apt lock
+      delay: 4
     - name: Install docker
       apt:
         name: docker
@@ -24,10 +34,18 @@
     - name: reset ssh connection
       meta: reset_connection
       become: no
-    - name: Ensures fe dir exists
-      file: path=/fe/ state=directory
 
-      # DB
+#
+# Install images on each machines and run desired containers
+#
+
+- hosts: db_vm
+  become: yes
+  tags: 
+  - deploy
+  tasks:
+    - name: Ensures db dir exists
+      file: path=/db/ state=directory
     - name: Copy DB Dockerfile
       ansible.builtin.copy:
         src: ./db/
@@ -37,9 +55,15 @@
     - name: Build DB image
       command: docker build -t wus-db /db
     - name: Run DB image
-      command: docker run --rm -d -p 8082:3306 wus-db
-      
-      # BE
+      command: docker run --rm -d -p {{ db_port }}:3306 wus-db
+
+- hosts: be_vm
+  become: yes
+  tags: 
+  - deploy
+  tasks:
+    - name: Ensures be dir exists
+      file: path=/db/ state=directory
     - name: Copy BE Dockerfile
       ansible.builtin.copy:
         src: ./be/
@@ -49,9 +73,13 @@
     - name: Build BE image
       command: docker build -t wus-be /be
     - name: Run BE image
-      command: docker run --rm -d -p 8081:8081 -e DB_ADDRESS=172.17.0.1 -e DB_PORT=8082 wus-be
-      
-    # FE
+      command: docker run --rm -d -p {{ be_port }}:8081 -e DB_ADDRESS={{ db_host }} -e DB_PORT={{ db_port }} wus-be
+
+- hosts: fe_vm
+  become: yes
+  tags: 
+  - deploy
+  tasks:
     - name: Copy FE Dockerfile
       ansible.builtin.copy:
         src: ./fe/
@@ -61,7 +89,4 @@
     - name: Build FE image
       command: docker build -t wus-fe /fe
     - name: Run FE image
-      command: docker run --rm -d -p 8080:80 -e BE_ADDRESS=172.17.0.3 -e BE_PORT=8081 wus-fe
-
-
-# TODO: parametrize addresses and ports
+      command: docker run --rm -d -p {{ fe_port }}:80 -e BE_ADDRESS={{ be_host }} -e BE_PORT={{ be_port }} wus-fe

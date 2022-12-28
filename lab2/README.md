@@ -12,9 +12,9 @@ python3 -m pip install --user ansible
 
 ## Konfiguracja Ansible
 
-W pliku `ansible.cfg` należy ustawić ścieżki/ścieżkę do klucza ssh uzyskanego w portalu Azure. (w przypdku problemów z zbyt otwartymi uprawnieniami należy ustawić `chmod 500` dla pliku z kluczem, a `chmod 700` dla katalogu nadrzędnego)
+W pliku `inventory.yml` należy ustawić adresy do maszyn wirtualnych na których ma odbyć się deployment oraz ustawić odpowiednią konfigurację uruchomienia aplikacji (porty, adresy ich zależności itp.)
 
-W pliku `inventory.yml` należy ustawić adresy/adres do maszyn wirtualnych.
+Również można ustawić ścieżki do kluczy ssh (`ansible_ssh_private_key_file`) uzyskanego w portalu Azure. (w przypdku problemów z zbyt otwartymi uprawnieniami należy ustawić `chmod 500` dla pliku z kluczem, a `chmod 700` dla katalogu nadrzędnego)
 
 Aby sprawdzić, czy ansible jest w stanie połączyć się ze wskazanymi maszynami można wykorzystać następującą komendę:
 
@@ -26,4 +26,10 @@ ansible -m ping all
 
 ```sh
 ansible-playbook main_playbook.yml
+```
+
+Aby usprawnić działanie playbooka, można uruchomić tylko sekcję odpowiedzialną za redeployment aplikacji (jeśli wiemy że maszyna jest skonfigurowana tzn. ma zainstalowanego dockera):
+
+```sh
+ansible-playbook main_playbook.yml --tags "deploy"
 ```
