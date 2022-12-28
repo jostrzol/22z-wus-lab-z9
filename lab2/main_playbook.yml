@@ -49,7 +49,7 @@
     - name: Build BE image
       command: docker build -t wus-be /be
     - name: Run BE image
-      command: docker run --rm -d -p 8081:8081 -e DB_ADDRESS=172.17.0.2 -e DB_PORT=8082 wus-be
+      command: docker run --rm -d -p 8081:8081 -e DB_ADDRESS=172.17.0.1 -e DB_PORT=8082 wus-be
       
     # FE
     - name: Copy FE Dockerfile
