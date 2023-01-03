@@ -1,56 +1,30 @@
 all:
   vars:
-    ansible_user: adminek
+    ansible_user: <USER>
+    db_master_host: 172.17.0.1
+    db_master_port: 8082
+    db_slave_host: 172.17.0.1
+    db_slave_port: 8083
+    be_host: 172.17.0.3
+    be_port: 8081
+    db_host: 172.17.0.1
+    db_port: 8082
     fe_port: 8080
-    # --- config 1 ---
-    # be_host: 10.0.0.100
-    # be_port: 8081
-    # db_host: 10.0.0.100
-    # db_port: 8082
-
-    # --- config 3 ---
-    # be_host: 10.0.0.100
-    # be_port: 8081
-    # db_master_host: 10.0.0.100
-    # db_master_port: 8082
-    # db_slave_host: 10.0.0.100
-    # db_slave_port: 8083
-
-    # --- config 4 ---
-    lb_host: 10.0.0.100
-    lb_port: 8081
-    be_write_host: 10.0.0.100
-    be_write_port: 8082
-    be_read_host: 10.0.0.100
-    be_read_port: 8083
-    db_master_host: 10.0.0.100
-    db_master_port: 8084
-    db_slave_host: 10.0.0.100
-    db_slave_port: 8085
   children:
     azurevms:
       hosts:
         db_vm:
           ansible_host: <IP>
-          ansible_ssh_private_key_file: <SSH_KEY_LOCATION>
-        db_master_vm:
-          ansible_host: <IP>
-          ansible_ssh_private_key_file: <SSH_KEY_LOCATION>
-        db_slave_vm:
-          ansible_host: <IP>
-          ansible_ssh_private_key_file: <SSH_KEY_LOCATION>
+          ansible_ssh_private_key_file: <SSK_KEY_LOCATION>
         be_vm:
           ansible_host: <IP>
-          ansible_ssh_private_key_file: <SSH_KEY_LOCATION>
-        be_write_vm:
+          ansible_ssh_private_key_file: <SSK_KEY_LOCATION>
+        db_master_vm:
           ansible_host: <IP>
-          ansible_ssh_private_key_file: <SSH_KEY_LOCATION>
-        be_read_vm:
+          ansible_ssh_private_key_file: <SSK_KEY_LOCATION>
+        db_slave_vm:
           ansible_host: <IP>
-          ansible_ssh_private_key_file: <SSH_KEY_LOCATION>
-        lb_vm:
-          ansible_host: <IP>
-          ansible_ssh_private_key_file: <SSH_KEY_LOCATION>
+          ansible_ssh_private_key_file: <SSK_KEY_LOCATION>
         fe_vm:
           ansible_host: <IP>
-          ansible_ssh_private_key_file: <SSH_KEY_LOCATION>
+          ansible_ssh_private_key_file: <SSK_KEY_LOCATION>
