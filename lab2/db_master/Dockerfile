@@ -10,6 +10,7 @@ RUN curl \
 RUN curl \
     https://raw.githubusercontent.com/spring-petclinic/spring-petclinic-rest/master/src/main/resources/db/mysql/populateDB.sql \
     --output /docker-entrypoint-initdb.d/2.sql
+RUN echo "CREATE USER 'replikacja'@'%'; GRANT REPLICATION SLAVE ON *.* TO 'replikacja'@'%';" > /docker-entrypoint-initdb.d/3.sql
 
 ENV MYSQL_ROOT_PASSWORD="root" \
     MYSQL_USER="pc" \
