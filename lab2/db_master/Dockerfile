@@ -12,7 +12,7 @@ RUN curl \
     --output /docker-entrypoint-initdb.d/2.sql
 RUN echo "CREATE USER 'replikacja'@'%'; GRANT REPLICATION SLAVE ON *.* TO 'replikacja'@'%';" > /docker-entrypoint-initdb.d/3.sql
 
-ENV MYSQL_ROOT_PASSWORD="root" \
+ENV MYSQL_RANDOM_ROOT_PASSWORD="true" \
     MYSQL_USER="pc" \
     MYSQL_PASSWORD="petclinic" \
     MYSQL_DATABASE="petclinic" 
