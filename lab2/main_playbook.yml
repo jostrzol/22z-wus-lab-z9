@@ -89,7 +89,7 @@
     - name: Stop existing DB container(s)
       shell: docker ps -q --filter ancestor=wus-slave-db | xargs --no-run-if-empty docker stop
     - name: Build DB image
-      command: docker build -t wus-slave-db ./db_slave
+      command: docker build --build-arg DB_MASTER_ADDRESS={{ db_master_host }} --build-arg DB_MASTER_PORT={{ db_master_port }} -t wus-slave-db ./db_slave
     - name: Run DB image
       command: docker run --name slave --rm -d -p {{ db_slave_port }}:3306 wus-slave-db
 
@@ -147,21 +147,3 @@
       command: docker build -t wus-fe /fe
     - name: Run FE image
       command: docker run --rm -d -p {{ fe_port }}:80 -e BE_ADDRESS={{ be_host }} -e BE_PORT={{ be_port }} wus-fe
-
-- hosts: db_master_vm
-  become: yes
-  tags:
-  - deploy_ms
-  tasks:
-    - name: Add master privileges
-      command: docker exec master mysql -u root -proot -e "CREATE USER 'replikacja'@'%'; GRANT REPLICATION SLAVE ON *.* TO 'replikacja'@'%';"
-
-- hosts: db_slave_vm
-  become: yes
-  tags: 
-  - deploy_ms
-  tasks:
-    - name: Set slave master
-      command: docker exec slave mysql -u root -proot -e "CHANGE MASTER TO MASTER_HOST='{{ db_master_host }}', MASTER_USER='replikacja', MASTER_PORT={{ db_master_port }};"
-    - name: Start slave
-      command: docker exec slave mysql -u root -proot -e "start slave;"
