@@ -29,20 +29,35 @@
       ansible.builtin.group:
         name: docker
         state: present
-    - name: Add {{ ansible_user }} to docker group 
+    - name: Add {{ ansible_user }} to docker group
       command: usermod -aG docker {{ ansible_user }}
     - name: reset ssh connection
       meta: reset_connection
       become: no
 
 #
+# Stop running containers
+#
+
+- hosts: all
+  become: yes
+  tags:
+    - deploy_1
+    - deploy_3
+    - deploy_4
+  tasks:
+    - name: Stop existing containers
+      shell: docker ps -q | xargs --no-run-if-empty docker stop
+#
 # Install images on each machines and run desired containers
 #
 
+# DB
+
 - hosts: db_vm
   become: yes
-  tags: 
-  - deploy
+  tags:
+  - deploy_1
   tasks:
     - name: Ensures db dir exists
       file: path=/db/ state=directory
@@ -50,17 +65,16 @@
       ansible.builtin.copy:
         src: ./db/
         dest: /db/
-    - name: Stop existing DB container(s)
-      shell: docker ps -q --filter ancestor=wus-db | xargs --no-run-if-empty docker stop
     - name: Build DB image
       command: docker build -t wus-db /db
     - name: Run DB image
       command: docker run --rm -d -p {{ db_port }}:3306 wus-db
-  
+
 - hosts: db_master_vm
   become: yes
-  tags: 
-  - deploy_ms
+  tags:
+  - deploy_3
+  - deploy_4
   tasks:
     - name: Ensures db dir exists
       file: path=/db_master/ state=directory
@@ -68,17 +82,16 @@
       ansible.builtin.copy:
         src: ./db_master/
         dest: /db_master/
-    - name: Stop existing DB container(s)
-      shell: docker ps -q --filter ancestor=wus-master-db | xargs --no-run-if-empty docker stop
     - name: Build DB image
       command: docker build -t wus-master-db /db_master
     - name: Run DB image
       command: docker run --name master --rm -d -p {{ db_master_port }}:3306 wus-master-db
-    
+
 - hosts: db_slave_vm
   become: yes
-  tags: 
-  - deploy_ms
+  tags:
+    - deploy_3
+    - deploy_4
   tasks:
     - name: Ensures db dir exists
       file: path=/db_slave/ state=directory
@@ -86,17 +99,17 @@
       ansible.builtin.copy:
         src: ./db_slave/
         dest: /db_slave/
-    - name: Stop existing DB container(s)
-      shell: docker ps -q --filter ancestor=wus-slave-db | xargs --no-run-if-empty docker stop
     - name: Build DB image
       command: docker build --build-arg DB_MASTER_ADDRESS={{ db_master_host }} --build-arg DB_MASTER_PORT={{ db_master_port }} -t wus-slave-db /db_slave
     - name: Run DB image
       command: docker run --name slave --rm -d -p {{ db_slave_port }}:3306 wus-slave-db
 
+# BE
+
 - hosts: be_vm
   become: yes
-  tags: 
-  - deploy
+  tags:
+  - deploy_1
   tasks:
     - name: Ensures be dir exists
       file: path=/be/ state=directory
@@ -104,8 +117,6 @@
       ansible.builtin.copy:
         src: ./be/
         dest: /be/
-    - name: Stop existing BE container(s)
-      shell: docker ps -q --filter ancestor=wus-be | xargs --no-run-if-empty docker stop
     - name: Build BE image
       command: docker build -t wus-be /be
     - name: Run BE image
@@ -113,8 +124,8 @@
 
 - hosts: be_vm
   become: yes
-  tags: 
-  - deploy_ms
+  tags:
+  - deploy_3
   tasks:
     - name: Ensures be dir exists
       file: path=/be_ms/ state=directory
@@ -124,26 +135,88 @@
         dest: /be_ms/
     - name: Ensures be dir exists
       file: path=/be_ms/ state=directory
-    - name: Stop existing BE container(s)
-      shell: docker ps -q --filter ancestor=wus-be-ms | xargs --no-run-if-empty docker stop
     - name: Build BE image
       command: docker build -t wus-be-ms /be_ms
     - name: Run BE image
       command: docker run --rm -d -p {{ be_port }}:8081 -e DB_MASTER_ADDRESS={{ db_master_host }} -e DB_MASTER_PORT={{ db_master_port }} -e DB_SLAVE_ADDRESS={{ db_slave_host }} -e DB_SLAVE_PORT={{ db_slave_port }} wus-be-ms
 
+- hosts: be_write_vm
+  become: yes
+  tags:
+    - deploy_4
+  tasks:
+    - name: Ensures be dir exists
+      file: path=/be/ state=directory
+    - name: Copy BE Dockerfile
+      ansible.builtin.copy:
+        src: ./be/
+        dest: /be/
+    - name: Build BE image
+      command: docker build -t wus-be /be
+    - name: Run BE image
+      command: docker run --rm -d -p {{ be_write_port }}:8081 -e DB_ADDRESS={{ db_master_host }} -e DB_PORT={{ db_master_port }} wus-be
+
+- hosts: be_read_vm
+  become: yes
+  tags:
+    - deploy_4
+  tasks:
+    - name: Ensures be dir exists
+      file: path=/be/ state=directory
+    - name: Copy BE Dockerfile
+      ansible.builtin.copy:
+        src: ./be/
+        dest: /be/
+    - name: Build BE image
+      command: docker build -t wus-be /be
+    - name: Run BE image
+      command: docker run --rm -d -p {{ be_read_port }}:8081 -e DB_ADDRESS={{ db_slave_host }} -e DB_PORT={{ db_slave_port }} wus-be
+
+# LB
+
+- hosts: lb_vm
+  become: yes
+  tags:
+    - deploy_4
+  tasks:
+    - name: Ensures lb dir exists
+      file: path=/lb/ state=directory
+    - name: Copy LB Dockerfile
+      ansible.builtin.copy:
+        src: ./lb/
+        dest: /lb/
+    - name: Build LB image
+      command: docker build -t wus-lb /lb
+    - name: Run LB
+      command: docker run --rm -d -p {{ lb_port }}:8080 -e BE_WRITE_ADDRESS={{ be_write_host }} -e BE_WRITE_PORT={{ be_write_port }} -e BE_READ_ADDRESS={{ be_read_host }} -e BE_READ_PORT={{ be_read_port }} wus-lb
+
+# FE
+
 - hosts: fe_vm
   become: yes
-  tags: 
-  - deploy
-  - deploy_ms
+  tags:
+  - deploy_1
+  - deploy_3
   tasks:
     - name: Copy FE Dockerfile
       ansible.builtin.copy:
         src: ./fe/
         dest: /fe/
-    - name: Stop existing FE container(s)
-      shell: docker ps -q --filter ancestor=wus-fe | xargs --no-run-if-empty docker stop
     - name: Build FE image
       command: docker build -t wus-fe /fe
     - name: Run FE image
       command: docker run --rm -d -p {{ fe_port }}:80 -e BE_ADDRESS={{ be_host }} -e BE_PORT={{ be_port }} wus-fe
+
+- hosts: fe_vm
+  become: yes
+  tags:
+    - deploy_4
+  tasks:
+    - name: Copy FE Dockerfile
+      ansible.builtin.copy:
+        src: ./fe/
+        dest: /fe/
+    - name: Build FE image
+      command: docker build -t wus-fe /fe
+    - name: Run FE image
+      command: docker run --rm -d -p {{ fe_port }}:80 -e BE_ADDRESS={{ lb_host }} -e BE_PORT={{ lb_port }} wus-fe

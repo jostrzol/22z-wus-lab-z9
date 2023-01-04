@@ -1,30 +1,49 @@
 all:
   vars:
-    ansible_user: <USER>
-    db_master_host: 172.17.0.1
-    db_master_port: 8082
-    db_slave_host: 172.17.0.1
-    db_slave_port: 8083
-    be_host: 172.17.0.3
-    be_port: 8081
-    db_host: 172.17.0.1
-    db_port: 8082
+    ansible_user: adminek
+    db_slave_host: 10.0.0.100
+    db_slave_port: 8087
+    db_master_host: 10.0.0.100
+    db_master_port: 8086
+    db_host: 10.0.0.100
+    db_port: 8085
+
+    be_host: 10.0.0.100
+    be_port: 8084
+    be_write_host: 10.0.0.100
+    be_write_port: 8083
+    be_read_host: 10.0.0.100
+    be_read_port: 8082
+
+    lb_host: 10.0.0.100
+    lb_port: 8081
+
     fe_port: 8080
+
   children:
     azurevms:
       hosts:
         db_vm:
-          ansible_host: <IP>
-          ansible_ssh_private_key_file: <SSK_KEY_LOCATION>
-        be_vm:
-          ansible_host: <IP>
-          ansible_ssh_private_key_file: <SSK_KEY_LOCATION>
+          ansible_host: 51.144.236.15
+          ansible_ssh_private_key_file: ~/.ssh/id_rsa
         db_master_vm:
-          ansible_host: <IP>
-          ansible_ssh_private_key_file: <SSK_KEY_LOCATION>
+          ansible_host: 51.144.236.15
+          ansible_ssh_private_key_file: ~/.ssh/id_rsa
         db_slave_vm:
-          ansible_host: <IP>
-          ansible_ssh_private_key_file: <SSK_KEY_LOCATION>
+          ansible_host: 51.144.236.15
+          ansible_ssh_private_key_file: ~/.ssh/id_rsa
+        be_vm:
+          ansible_host: 51.144.236.15
+          ansible_ssh_private_key_file: ~/.ssh/id_rsa
+        be_write_vm:
+          ansible_host: 51.144.236.15
+          ansible_ssh_private_key_file: ~/.ssh/id_rsa
+        be_read_vm:
+          ansible_host: 51.144.236.15
+          ansible_ssh_private_key_file: ~/.ssh/id_rsa
+        lb_vm:
+          ansible_host: 51.144.236.15
+          ansible_ssh_private_key_file: ~/.ssh/id_rsa
         fe_vm:
-          ansible_host: <IP>
-          ansible_ssh_private_key_file: <SSK_KEY_LOCATION>
+          ansible_host: 51.144.236.15
+          ansible_ssh_private_key_file: ~/.ssh/id_rsa
