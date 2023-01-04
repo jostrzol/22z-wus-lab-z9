@@ -71,7 +71,7 @@
     - name: Stop existing DB container(s)
       shell: docker ps -q --filter ancestor=wus-master-db | xargs --no-run-if-empty docker stop
     - name: Build DB image
-      command: docker build -t wus-master-db ./db_master
+      command: docker build -t wus-master-db /db_master
     - name: Run DB image
       command: docker run --name master --rm -d -p {{ db_master_port }}:3306 wus-master-db
     
@@ -89,7 +89,7 @@
     - name: Stop existing DB container(s)
       shell: docker ps -q --filter ancestor=wus-slave-db | xargs --no-run-if-empty docker stop
     - name: Build DB image
-      command: docker build --build-arg DB_MASTER_ADDRESS={{ db_master_host }} --build-arg DB_MASTER_PORT={{ db_master_port }} -t wus-slave-db ./db_slave
+      command: docker build --build-arg DB_MASTER_ADDRESS={{ db_master_host }} --build-arg DB_MASTER_PORT={{ db_master_port }} -t wus-slave-db /db_slave
     - name: Run DB image
       command: docker run --name slave --rm -d -p {{ db_slave_port }}:3306 wus-slave-db
 
@@ -111,7 +111,7 @@
     - name: Run BE image
       command: docker run --rm -d -p {{ be_port }}:8081 -e DB_ADDRESS={{ db_host }} -e DB_PORT={{ db_port }} wus-be
 
-- hosts: be_ms_vm
+- hosts: be_vm
   become: yes
   tags: 
   - deploy_ms
