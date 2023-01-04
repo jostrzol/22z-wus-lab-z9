@@ -25,11 +25,7 @@ ansible -m ping all
 ## Uruchomienie Ansible Playbook
 
 ```sh
-ansible-playbook main_playbook.yml
+ansible-playbook main_playbook.yml --tags setup, deploy_<nr_configu>
 ```
 
-Aby usprawnić działanie playbooka, można uruchomić tylko sekcję odpowiedzialną za redeployment aplikacji (jeśli wiemy że maszyna jest skonfigurowana tzn. ma zainstalowanego dockera):
-
-```sh
-ansible-playbook main_playbook.yml --tags "deploy"
-```
+Aby usprawnić działanie playbooka, można pominąć tag `setup` (jeśli wiemy że maszyna jest skonfigurowana tzn. ma zainstalowanego dockera)
