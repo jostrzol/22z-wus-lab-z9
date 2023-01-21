@@ -7,7 +7,7 @@ metadata:
   name: vets-service
   namespace: spring-petclinic
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: vets-service
@@ -17,6 +17,18 @@ spec:
       labels:
         app: vets-service
     spec:
+      affinity:
+        podAntiAffinity: 
+          preferredDuringSchedulingIgnoredDuringExecution: 
+          - weight: 100  
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: vets-service
+                  operator: In 
+                  values:
+                  - store
+              topologyKey: kubernetes.io/hostname
       containers:
       - image: ${REPOSITORY_PREFIX}/spring-petclinic-cloud-vets-service:latest
         name: vets-service
