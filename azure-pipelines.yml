@@ -10,5 +10,15 @@ pool:
   vmImage: ubuntu-latest
 
 steps:
-- script: mvn spring-boot:build-image -Pk8s -DREPOSITORY_PREFIX=jostrzol && ./scripts/pushImages.sh
-  displayName: 'Build and publish docker image'
+- script: docker login -u jostrzol -p ${DOCKER_PASSWORD}
+  env:
+    DOCKER_PASSWORD: $(docker_password)
+  displayName: 'Login to dockerhub'
+- script: mvn spring-boot:build-image -Pk8s -DREPOSITORY_PREFIX=${REPOSITORY_PREFIX}
+  env:
+    REPOSITORY_PREFIX: jostrzol
+  displayName: 'Build docker images'
+- script: ./scripts/pushImages.sh
+  env:
+    REPOSITORY_PREFIX: jostrzol
+  displayName: 'Publish docker images'
