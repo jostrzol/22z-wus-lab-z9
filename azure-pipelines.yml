@@ -10,27 +10,22 @@ pool:
   vmImage: ubuntu-latest
 
 jobs:
-# - job: buildAndPush
-#   displayName: 'Build and push docker images'
-#   steps:
-#   - script: docker login -u jostrzol -p ${DOCKER_PASSWORD}
-#     env:
-#       DOCKER_PASSWORD: $(docker_password)
-#     displayName: 'Login to dockerhub'
-#   - script: mvn spring-boot:build-image -Pk8s -DREPOSITORY_PREFIX=${REPOSITORY_PREFIX}
-#     env:
-#       REPOSITORY_PREFIX: jostrzol
-#     workingDirectory: lab3
-#     displayName: 'Build docker images'
-#   - script: ./scripts/pushImages.sh
-#     env:
-#       REPOSITORY_PREFIX: jostrzol
-#     workingDirectory: lab3
-#     displayName: 'Publish docker images'
+- job: buildAndPush
+  displayName: 'Build and push docker images'
+  steps:
+  - script: docker login -u ${REPOSITORY_PREFIX} -p ${DOCKER_PASSWORD}
+    env:
+      DOCKER_PASSWORD: $(docker_password)
+    displayName: 'Login to dockerhub'
+  - script: mvn spring-boot:build-image -Pk8s -DREPOSITORY_PREFIX=${REPOSITORY_PREFIX}
+    workingDirectory: lab3
+    displayName: 'Build docker images'
+  - script: ./scripts/pushImages.sh
+    workingDirectory: lab3
+    displayName: 'Publish docker images'
 - deployment: deployK8s
+  dependsOn: buildAndPush
   displayName: Deploy to AKS
-  pool:
-    vmImage: ubuntu-latest
   environment: k8s.spring-petclinic
   strategy:
     runOnce:
