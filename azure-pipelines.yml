@@ -10,23 +10,23 @@ pool:
   vmImage: ubuntu-latest
 
 jobs:
-- job: buildAndPush
-  displayName: 'Build and push docker images'
-  steps:
-  - script: docker login -u jostrzol -p ${DOCKER_PASSWORD}
-    env:
-      DOCKER_PASSWORD: $(docker_password)
-    displayName: 'Login to dockerhub'
-  - script: mvn spring-boot:build-image -Pk8s -DREPOSITORY_PREFIX=${REPOSITORY_PREFIX}
-    env:
-      REPOSITORY_PREFIX: jostrzol
-    workingDirectory: lab3
-    displayName: 'Build docker images'
-  - script: ./scripts/pushImages.sh
-    env:
-      REPOSITORY_PREFIX: jostrzol
-    workingDirectory: lab3
-    displayName: 'Publish docker images'
+# - job: buildAndPush
+#   displayName: 'Build and push docker images'
+#   steps:
+#   - script: docker login -u jostrzol -p ${DOCKER_PASSWORD}
+#     env:
+#       DOCKER_PASSWORD: $(docker_password)
+#     displayName: 'Login to dockerhub'
+#   - script: mvn spring-boot:build-image -Pk8s -DREPOSITORY_PREFIX=${REPOSITORY_PREFIX}
+#     env:
+#       REPOSITORY_PREFIX: jostrzol
+#     workingDirectory: lab3
+#     displayName: 'Build docker images'
+#   - script: ./scripts/pushImages.sh
+#     env:
+#       REPOSITORY_PREFIX: jostrzol
+#     workingDirectory: lab3
+#     displayName: 'Publish docker images'
 - deployment: deployK8s
   displayName: Deploy to AKS
   pool:
@@ -41,5 +41,5 @@ jobs:
           displayName: 'Download Kube Config'
           inputs:
             secureFile: 'config'
-        - script: kubectl rollout restart deployment -n spring-petclinic --config $(config.secureFilePath)
+        - script: kubectl rollout restart deployment -n spring-petclinic --kubeconfig $(config.secureFilePath)
           displayName: 'Redeploy'
