@@ -14,7 +14,7 @@ steps:
   env:
     DOCKER_PASSWORD: $(docker_password)
   displayName: 'Login to dockerhub'
-- script: cd ./22z-wus-lab-z9/lab3
+- script: cd ./lab3
   displayName: 'CD to lab3'
 - script: mvn spring-boot:build-image -Pk8s -DREPOSITORY_PREFIX=${REPOSITORY_PREFIX}
   env:
