@@ -38,8 +38,9 @@ jobs:
         steps:
         - checkout: self
         - task: DownloadSecureFile@1
+          name: kubeConfig
           displayName: 'Download Kube Config'
           inputs:
             secureFile: 'config'
-        - script: kubectl rollout restart deployment -n spring-petclinic --kubeconfig $(config.secureFilePath)
+        - script: kubectl rollout restart deployment -n spring-petclinic --kubeconfig $(kubeConfig.secureFilePath)
           displayName: 'Redeploy'
