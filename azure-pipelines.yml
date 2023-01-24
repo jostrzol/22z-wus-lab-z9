@@ -14,15 +14,13 @@ steps:
   env:
     DOCKER_PASSWORD: $(docker_password)
   displayName: 'Login to dockerhub'
-- script: cd ./lab3
-  displayName: 'CD to lab3'
-- script: ls -la
-  displayName: 'List catalog'
 - script: mvn spring-boot:build-image -Pk8s -DREPOSITORY_PREFIX=${REPOSITORY_PREFIX}
   env:
     REPOSITORY_PREFIX: jostrzol
+  workingDirectory: lab3
   displayName: 'Build docker images'
 - script: ./scripts/pushImages.sh
   env:
     REPOSITORY_PREFIX: jostrzol
+  workingDirectory: lab3
   displayName: 'Publish docker images'
